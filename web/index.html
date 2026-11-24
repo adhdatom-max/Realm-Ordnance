@@ -576,6 +576,7 @@ function moveBy(dx,dy){
 }
 function act(){
  if(cur?.act==='tackle'){openFishing();return;}
+ if(cur?.act==='fish'){openFishing();if(fishing.rod&&fishing.stage==='idle')askFishingQuiz('cast');return;}
  if(!cur)return;
  if(cur.act==='climb'){const j=cur.j,a=Math.max(1,Math.min(j.length-1,alongJetty(j,P.x,P.y)));P.x=j.x0+j.dx*a;P.y=j.y0+j.dy*a;P.swim=false;deck.eye=null;deck.sy=null;cur=null;return}
  if(cur.act==='board'){
@@ -635,7 +636,7 @@ function ui(){
  }else{
   const footJetty=jettyAt(P.x,P.y);
   cur=footJetty&&alongJetty(footJetty,P.x,P.y)>=footJetty.length-27?{act:'board',j:footJetty,t:'Board the boat'}:null;
-  if(footJetty)h='<b>'+esc(footJetty.I.n)+' jetty</b> · Walk to the end of the jetty to board.';
+  if(footJetty)h='<b>'+esc(footJetty.I.n)+' jetty</b> · Walk to the end of the jetty to board.'+(footJetty.I.n==='games'?' The Reel Deal tackle shop is ashore: turn around and walk inland.':'');
   else if(I)h='<b>'+esc(I.n)+' island</b> · '+(I.ps.length-1)+' charted realms · Click a building to inspect its realm.';
   if(P.swim){
    const cj=JT.find(j=>{const a=alongJetty(j,P.x,P.y),c=Math.abs((P.y-j.y0)*j.dx-(P.x-j.x0)*j.dy);return a>=-2&&a<=j.length+2&&c<=jettyHalfWidth+3.4});
@@ -644,6 +645,7 @@ function ui(){
   }
  }
  if(!P.boat&&!P.swim&&insideTackleShop())cur={act:'tackle',t:'Browse the tackle shop'};
+ if(!cur&&fishing.rod&&fishingSpot())cur={act:'fish',t:'Cast a line'};
  const plotted=PK.find(({p})=>p.path===selectedPath)?.p;
  const near=PK.reduce((best,{p})=>{
   if(Boolean(p.offshore)!==P.boat)return best;
@@ -1427,6 +1429,7 @@ function rebuildDeck(){
   box(dock,3.4,1.4,.16,length-5,3.9,-jettyHalfWidth+.4,cream);
 
  }
+ buildTackleShop(world);
  for(const {p} of PK){
   const group=new THREE.Group();
   const ground=p.offshore?-.15:meshElevation(p.lx,p.ly);
