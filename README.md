@@ -20,6 +20,10 @@ The browser can also import `data/plots` and `data/districts` CSV exports from t
 
 Open `web/index.html` in a recent browser with WebGL. Choose Mainnet or Onyx and allow the scan to finish. Walk with WASD or arrows, drag to look, click a building, press E at a jetty, or choose Auto Tour aboard the boat.
 
+## A little fishing break
+
+The Games jetty has **The Reel Deal**, a tackle shop. Click the shop or use the Fishing button nearby to borrow a free rod. Cast from any jetty or stop your boat, wait for the red float to dip, then press **Strike!** Catches, an occasional old boot and a message in a bottle are saved in the catch book on that browser. Walking reels the line in. An empty Games island stays available as open ground when no games have recent calls. The shop and catches are recreational scenery and browser state; they do not count as realms or chain activity.
+
 ## Test the Gno realm
 
 With the Gno toolchain installed, run `gno test -v .` inside `realm/`. This package was tested locally using GnoVM v1.8.0 with the Gno source tree set as `GNOROOT`.
