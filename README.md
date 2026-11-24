@@ -22,7 +22,7 @@ Open `web/index.html` in a recent browser with WebGL. Choose Mainnet or Onyx and
 
 ## A little fishing break
 
-The Games jetty has **The Reel Deal**, a tackle shop. Click the shop or use the Fishing button nearby to borrow a free rod. Cast from any jetty or stop your boat, wait for the red float to dip, then press **Strike!** Catches, an occasional old boot and a message in a bottle are saved in the catch book on that browser. Walking reels the line in. An empty Games island stays available as open ground when no games have recent calls. The shop and catches are recreational scenery and browser state; they do not count as realms or chain activity.
+The Games jetty has **The Reel Deal**, a tackle shop. Walk into The Reel Deal at the land end of the jetty and borrow a free rod. You can click the hut or use the Fishing button to view the tackle shop; the rod is collected inside. Answer a quick Go quiz question to cast from any jetty or stop your boat. When the red float dips, press **Strike!** and answer another question to reel in the catch. Board the boat with your rod at the end of any jetty; the fishing panel also has a boarding button there. Catches, an occasional old boot and a message in a bottle are saved in the catch book on that browser. Walking reels the line in. An empty Games island stays available as open ground when no games have recent calls. The shop and catches are recreational scenery and browser state; they do not count as realms or chain activity.
 
 ## Test the Gno realm
 
