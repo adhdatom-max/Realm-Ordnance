@@ -1,5 +1,7 @@
 # Realm Ordnance
 
+[Explore the public archipelago](https://realm-ordnance.andy-mawer.chatgpt.site) · [Check the Onyx realm package](https://gpas.onyx.testnets.gno.land/?path=gno.land/r/g19j4y5lzwkcuguf8a95pjueuhn7ay58gm0y3wen/realmordnance)
+
 Realm Ordnance turns the Gno ecosystem into a landscape you can explore and use. Each island represents a category of realms, such as DeFi, games, social projects, or tools. The island grows as more realms are charted there. Each realm has its own place on the land: successful calls raise its hill, while distinct callers and active blocks shape its footprint and settlement. A quiet realm may be a cottage; growing participation makes a village, and sustained use can make a castle.
 
 This is also a way to find where to build. Search for a realm, compare activity across categories, inspect a building to see its path and recent use, and follow its link into the real Gno realm. Wander through quiet areas to discover projects that could use contributors, or look across an island to spot gaps where a new tool, game, or community might belong. The terrain is an invitation to investigate, not a claim that activity alone measures quality. Walk the islands in first person, take a boat from a jetty, steer between categories, or let the boat give you a slow tour of the archipelago.
