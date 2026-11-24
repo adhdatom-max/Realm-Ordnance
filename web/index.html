@@ -41,10 +41,13 @@ canvas{position:absolute;left:0;top:0;width:100%;height:100%}
 #inspect a{color:var(--acc)}
 #close-inspect{position:absolute;right:7px;top:7px;font-size:17px;padding:0 6px}
 @media (pointer:coarse){#wrap.in-deck #inspect{bottom:98px}}
+
+#fishing-panel{position:absolute;right:12px;bottom:16px;z-index:5;width:min(340px,calc(100% - 24px));max-height:70%;overflow:auto;padding:18px;background:#fff8e6f5;border:2px solid #80654a;box-shadow:0 6px 25px #182b2855;line-height:1.5;font-size:16px;touch-action:pan-y;user-select:text}
+#fishing-panel[hidden]{display:none}#fishing-panel h2{font-size:22px;margin:0 30px 5px 0}#fishing-panel p{margin:8px 0}#fishing-panel button{padding:8px 12px;font-size:16px}#fishing-panel .close{position:absolute;right:8px;top:7px;padding:0 7px}#fish-status{min-height:50px}#catch-list{padding:0;list-style:none;font-size:14px}#catch-list li{padding:4px 0;border-bottom:1px solid #80654a33}.ctl button#fish-open{width:auto;height:34px;padding:0 10px;font-size:14px}
 </style></head><body>
 <header><h1>Realm Ordnance<span id="badge">SYNTHETIC DEMO</span></h1><div id="src"></div></header>
 <div class="bar"><select id="network" aria-label="Network"><option value="mainnet">Mainnet</option><option value="onyx">Onyx testnet</option></select><select id="blocks" aria-label="Activity window"><option value="1200">1,200 blocks</option><option value="2400">2,400 blocks</option><option value="5000" selected>5,000 blocks</option></select><button id="live" type="button">Pause live</button><input id="search" type="search" placeholder="Search realms" aria-label="Search realms"><span id="live-state" role="status"></span><button id="bF">Load Onyx CSVs (data/plots + data/districts)</button><input id="cf" type="file" accept=".csv,.txt" multiple hidden></div><div id="search-results"></div>
-<div id="wrap"><canvas id="c" aria-label="Archipelago chart"></canvas><canvas id="deck" aria-label="First-person archipelago" hidden></canvas><div id="nav" hidden><strong id="heading"></strong><small id="journey"></small></div><div id="realm-tag" hidden></div><div class="ctl"><button id="view" type="button">First person</button><button id="tour" type="button" hidden>Auto Tour</button><button id="zi">+</button><button id="zo">−</button><button id="zl" title="Fit archipelago">Fit</button></div><button id="act" type="button"></button><aside id="inspect" aria-label="Realm details" hidden><button id="close-inspect" type="button" aria-label="Close realm details">×</button><div id="inspect-body" aria-live="polite"></div></aside><div id="helm" hidden aria-label="Movement controls"><span></span><button data-key="w" aria-label="Forward">↑</button><span></span><button data-key="a" aria-label="Left">←</button><button data-key="s" aria-label="Reverse">↓</button><button data-key="d" aria-label="Right">→</button></div></div>
+<div id="wrap"><canvas id="c" aria-label="Archipelago chart"></canvas><canvas id="deck" aria-label="First-person archipelago" hidden></canvas><div id="nav" hidden><strong id="heading"></strong><small id="journey"></small></div><div id="realm-tag" hidden></div><div class="ctl"><button id="view" type="button">First person</button><button id="tour" type="button" hidden>Auto Tour</button><button id="fish-open" type="button">Fishing</button><button id="zi">+</button><button id="zo">−</button><button id="zl" title="Fit archipelago">Fit</button></div><button id="act" type="button"></button><aside id="inspect" aria-label="Realm details" hidden><button id="close-inspect" type="button" aria-label="Close realm details">×</button><div id="inspect-body" aria-live="polite"></div></aside><aside id="fishing-panel" aria-label="Tackle shop and catch book" hidden><button class="close" id="fish-close" aria-label="Close fishing">×</button><h2>The Reel Deal</h2><small>Games jetty tackle shop · just for fun</small><p id="fish-status" role="status" aria-live="polite"></p><button id="fish-action" type="button">Borrow a rod</button> <button id="fish-book" type="button">Catch book</button><ul id="catch-list" hidden></ul></aside><div id="helm" hidden aria-label="Movement controls"><span></span><button data-key="w" aria-label="Forward">↑</button><span></span><button data-key="a" aria-label="Left">←</button><button data-key="s" aria-label="Reverse">↓</button><button data-key="d" aria-label="Right">→</button></div></div>
 <div id="info"></div>
 <div id="key"><b>Key:</b> one island per category · island area follows charted realm count · height: successful call transactions · width: distinct callers · footprint: active blocks · Older sightings and offshore realms are marked · WASD or arrows to move · drag to look · click a building to inspect · E to board or land · Auto Tour is available aboard.</div>
 <footer style="margin:10px 0"><a href="https://gpas.onyx.testnets.gno.land/?path=gno.land/r/g19j4y5lzwkcuguf8a95pjueuhn7ay58gm0y3wen/realmordnance" target="_blank" rel="noopener">Onyx package status</a> · <span id="pkg-state">Realm Ordnance package on Onyx</span></footer>
@@ -478,6 +481,7 @@ $('#act').onclick=act;
 addEventListener('keydown',e=>{
  if(e.target?.matches?.('input,select,textarea,[contenteditable]')||e.ctrlKey||e.metaKey||e.altKey)return;
  const key=e.key.toLowerCase();
+ if(key==='escape'&&!$('#fishing-panel').hidden){closeFishing();e.preventDefault();return;}
  if(key==='escape'&&inspectOpen){closeInspector();e.preventDefault();return;}
  if(walkKeys.includes(key)){keys[key]=1;e.preventDefault();}
  if(key==='e'&&!e.repeat){act();e.preventDefault();}
@@ -486,7 +490,7 @@ addEventListener('keyup',e=>delete keys[e.key.toLowerCase()]);
 addEventListener('blur',clearKeys);
 const pointerSlop=6;
 wrap.addEventListener('pointerdown',e=>{
- if(e.button!==0||e.target.closest('button,#inspect'))return;
+ if(e.button!==0||e.target.closest('button,#inspect,#fishing-panel'))return;
  wrap.setPointerCapture(e.pointerId);
  const point={id:e.pointerId,x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY,moved:false,since:performance.now()};
  if(deck.active)drag=point;
@@ -510,7 +514,7 @@ wrap.addEventListener('pointerup',e=>{
  if(!point.moved&&Math.hypot(e.clientX-point.startX,e.clientY-point.startY)<pointerSlop&&
     (drag||performance.now()-point.since<180)){
   const realm=drag?pickDeckRealm(e.clientX,e.clientY):pickChartRealm(e.clientX,e.clientY);
-  if(realm)showInspector(realm.path);
+  if(realm?.fishingShop)openFishing();else if(realm)showInspector(realm.path);
  }
  ptr=null;drag=null;
 });
@@ -523,6 +527,7 @@ for(const button of $('#helm').querySelectorAll('button')){
  for(const event of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(event,()=>delete keys[key]);
 }
 function step(dt){
+ if(fishing.stage==='waiting'||fishing.stage==='bite'){if(walkKeys.some(key=>keys[key]))stopFishing('Line reeled in. Find another spot whenever you like.');else return;}
  const side=+(!!(keys.d||keys.arrowright))-+(!!(keys.a||keys.arrowleft));
  const forward=+(!!(keys.w||keys.arrowup))-+(!!(keys.s||keys.arrowdown));
  const chartWalking=ptr&&(ptr.moved||performance.now()-ptr.since>=180);
@@ -544,6 +549,7 @@ function step(dt){
  if(P.boat){B.x=P.x;B.y=P.y;B.hd=P.hd;}
 }
 function houseBlocked(x,y){
+ const shop=tackleLocation();if(shop&&Math.hypot(x-shop.x,y-shop.y)<4.5)return true;
  for(const {p} of PK){if(p.offshore)continue;
   const size=p.txs>=3?1.34:1,offs=buildingsFor(p);
   for(const [ox,oz] of offs)if(Math.hypot(x-(p.lx+ox),y-(p.ly+oz))<2.4*size)return true;
@@ -565,6 +571,7 @@ function moveBy(dx,dy){
  if(!tryMove(P.x+dx,P.y+dy)){tryMove(P.x+dx,P.y);tryMove(P.x,P.y+dy)}
 }
 function act(){
+ if(cur?.act==='tackle'){openFishing();return;}
  if(!cur)return;
  if(cur.act==='climb'){const j=cur.j,a=Math.max(1,Math.min(j.length-1,alongJetty(j,P.x,P.y)));P.x=j.x0+j.dx*a;P.y=j.y0+j.dy*a;P.swim=false;deck.eye=null;deck.sy=null;cur=null;return}
  if(cur.act==='board'){
@@ -629,6 +636,7 @@ function ui(){
    h='<b>In the water</b> · Swim under the jetty, climb back up, or swim ashore.';
   }
  }
+ if(!P.boat&&!P.swim&&nearTackleShop())cur={act:'tackle',t:'Visit the tackle shop'};
  const plotted=PK.find(({p})=>p.path===selectedPath)?.p;
  const near=PK.reduce((best,{p})=>{
   if(Boolean(p.offshore)!==P.boat)return best;
@@ -655,7 +663,99 @@ function ui(){
  button.textContent=tour?'Take the helm':pausedStops?'Resume Auto Tour':'Auto Tour';
  action.style.display=cur?'block':'none';if(cur)action.textContent=cur.t;
  if(h!==lastHtml){$('#info').innerHTML=h;lastHtml=h;}
+ if(!$('#fishing-panel').hidden)refreshFishing();
 }
+
+/* ---------- a small, browser-local fishing diversion ---------- */
+const fishSpecies=[{name:'Mackerel',icon:'🐟',min:22,max:43,weight:40},{name:'Sea bass',icon:'🐟',min:25,max:70,weight:27},{name:'Pollock',icon:'🐟',min:30,max:85,weight:18},{name:'Golden wrasse',icon:'🐠',min:15,max:38,weight:10},{name:'An old boot',icon:'🥾',min:28,max:28,weight:4},{name:'Message in a bottle',icon:'🍾',min:0,max:0,weight:1}];
+let fishingSaved={rod:false,catches:[]};
+try{const saved=JSON.parse(localStorage.getItem('realm-ordnance-fishing-v1'));if(saved&&Array.isArray(saved.catches))fishingSaved={rod:!!saved.rod,catches:saved.catches.filter(c=>fishSpecies.some(f=>f.name===c.name)&&Number.isFinite(c.cm)).slice(-100)};}catch{}
+const fishing={...fishingSaved,stage:'idle',due:0,until:0,point:null,origin:null,message:'',visual:null};
+function saveFishing(){try{localStorage.setItem('realm-ordnance-fishing-v1',JSON.stringify({rod:fishing.rod,catches:fishing.catches}));}catch{}}
+function gamesDock(){return JT.find(j=>/^(games?|gaming)$/i.test(j.I.n));}
+function tackleLocation(){const j=gamesDock();return j?{x:j.x0-j.dy*9-j.dx*3,y:j.y0+j.dx*9-j.dy*3,j}:null;}
+function nearTackleShop(){const q=tackleLocation();return !!q&&(gap(P,q)<27||jettyAt(P.x,P.y)===q.j);}
+function fishingSpot(){
+ if(P.swim||!deck.active)return null;
+ const j=jettyAt(P.x,P.y);
+ if(!P.boat&&!j)return null;
+ // Cast over the side of a jetty; aboard, find open water ahead of the bow.
+ const heading=j?Math.atan2(j.dy,j.dx)+Math.PI/2:P.hd;
+ for(const a of [0,.65,-.65,1.3,-1.3])for(const d of [16,24,34]){
+  const x=P.x+Math.cos(heading+a)*d,y=P.y+Math.sin(heading+a)*d;
+  if(inW(x,y)&&hF(x,y)[0]<C&&!jettyAt(x,y))return{x,y};
+ }
+ return null;
+}
+function refreshFishing(){
+ const status=$('#fish-status'),action=$('#fish-action');
+ if(fishing.stage==='waiting'){status.textContent='Line is out. Watch the red float… wait for it to dip.';action.textContent='Reel in';action.disabled=false;}
+ else if(fishing.stage==='bite'){status.textContent='A bite! The float is under — strike now!';action.textContent='Strike!';action.disabled=false;}
+ else if(!fishing.rod){status.textContent=nearTackleShop()?'Welcome! Borrow a rod, then cast from any jetty or your boat. No payment needed.':'Visit The Reel Deal beside the Games island jetty to borrow a rod.';action.textContent='Borrow a rod';action.disabled=!nearTackleShop()||P.boat||P.swim;}
+ else{status.textContent=fishing.message||'Rod ready. Fish from a jetty or stop the boat to cast.';action.textContent='Cast a line';action.disabled=!fishingSpot();}
+ const list=$('#catch-list');
+ const contents=fishing.catches.length?'<li><b>'+fishing.catches.length+' catches · '+new Set(fishing.catches.map(c=>c.name)).size+' / '+fishSpecies.length+' discoveries</b></li>'+fishing.catches.slice().reverse().map(c=>'<li>'+esc(c.icon)+' '+esc(c.name)+(c.cm?' · '+c.cm+' cm':'')+'</li>').join(''):'<li>Your catch book is empty. The first one is out there.</li>';
+ if(list.innerHTML!==contents)list.innerHTML=contents;
+}
+function openFishing(){clearKeys();drag=null;ptr=null;$('#fishing-panel').hidden=false;refreshFishing();}
+function stopFishing(message=''){fishing.stage='idle';fishing.point=null;fishing.origin=null;fishing.message=message;refreshFishing();}
+function closeFishing(){stopFishing();$('#fishing-panel').hidden=true;}
+function beginFishing(now=performance.now()){
+ const point=fishingSpot();if(!point){fishing.message='Step onto a jetty or board your boat to fish.';refreshFishing();return;}
+ if(tour)cancelTour('Taking a fishing break');
+ clearKeys();P.hd=Math.atan2(point.y-P.y,point.x-P.x);deck.pitch=-.16;fishing.stage='waiting';fishing.point=point;fishing.origin={x:P.x,y:P.y,boat:P.boat};fishing.due=now+3000+Math.random()*5000;fishing.until=0;fishing.message='';refreshFishing();
+}
+function tickFishing(now){
+ if(fishing.stage!=='waiting'&&fishing.stage!=='bite')return;
+ if(!deck.active||P.swim||!fishing.origin||gap(P,fishing.origin)>2||P.boat!==fishing.origin.boat){stopFishing('Line reeled in as you moved.');return;}
+ if(fishing.stage==='waiting'&&now>=fishing.due){fishing.stage='bite';fishing.until=now+2400;refreshFishing();}
+ else if(fishing.stage==='bite'&&now>fishing.until)stopFishing('It got away! Try another cast.');
+}
+function catchFish(now=performance.now()){
+ if(fishing.stage!=='bite'||now>fishing.until){stopFishing('It got away! Try another cast.');return null;}
+ let roll=Math.random()*100,fish=fishSpecies[0];for(const candidate of fishSpecies){roll-=candidate.weight;if(roll<0){fish=candidate;break;}}
+ const cm=fish.min?Math.round(fish.min+Math.random()*(fish.max-fish.min)):0;
+ const caught={name:fish.name,icon:fish.icon,cm};fishing.catches.push(caught);fishing.catches=fishing.catches.slice(-100);saveFishing();
+ stopFishing(fish.name==='Message in a bottle'?'A message in a bottle: “Somewhere out there, a realm is waiting for its first visitor.”':fish.name==='An old boot'?'An old boot! The sea has a sense of humour.':fish.icon+' Caught a '+fish.name.toLowerCase()+' — '+cm+' cm! Added to your catch book.');return caught;
+}
+$('#fish-open').onclick=openFishing;$('#fish-close').onclick=closeFishing;
+$('#fish-book').onclick=()=>{$('#catch-list').hidden=!$('#catch-list').hidden;refreshFishing();};
+$('#fish-action').onclick=()=>{
+ if(!fishing.rod){if(!nearTackleShop()||P.boat||P.swim)return;fishing.rod=true;saveFishing();fishing.message='A rod, a float and a bit of patience. All yours — head down the jetty!';refreshFishing();}
+ else if(fishing.stage==='bite')catchFish();else if(fishing.stage==='waiting')stopFishing('A little early! Wait for the float to dip before striking.');else beginFishing();
+};
+function buildTackleShop(world){
+ const q=tackleLocation();if(!q)return;
+ const {wood,cream,blue,trim}=deck,g=new THREE.Group();g.position.set(q.x,meshElevation(q.x,q.y),q.y);g.userData.fishingShop=true;world.add(g);
+ const base=box(g,7,.4,5.5,0,.2,0,wood);box(g,6,3.9,4.8,0,2.35,0,cream);
+ const roof=new THREE.Mesh(cottageRoof(7,1.65,5.7),blue);roof.position.y=4.3;g.add(roof);
+ box(g,1.3,2.7,.12,-1.5,1.8,2.45,wood);box(g,1.7,1.3,.15,1.3,2.6,2.47,blue);
+ for(const x of [.45,1.3,2.15])box(g,.08,1.5,.18,x,2.6,2.55,cream);
+ box(g,1.9,.08,.18,1.3,2.6,2.55,cream);
+ const canvas=document.createElement('canvas');canvas.width=512;canvas.height=128;const c=canvas.getContext('2d');c.fillStyle='#173d42';c.fillRect(0,0,512,128);c.strokeStyle='#e8d6a5';c.lineWidth=7;c.strokeRect(5,5,502,118);c.fillStyle='#fff4d2';c.textAlign='center';c.font='bold 42px Georgia';c.fillText('THE REEL DEAL',256,55);c.font='25px Georgia';c.fillText('Tackle & tall tales',256,96);
+ const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
+ const sign=new THREE.Mesh(new THREE.PlaneGeometry(6,1.5),new THREE.MeshStandardMaterial({map:texture,roughness:.8,side:THREE.DoubleSide}));sign.position.set(0,4.1,2.65);sign.userData.trailMap=texture;g.add(sign);
+ for(const x of [-2.6,2.5]){const rod=box(g,.07,4.5,.07,x,2.4,2.9,wood);rod.rotation.z=x*.07;}
+ box(g,1.5,.8,1,3.8,.4,1.5,blue);box(g,1.6,.12,1.1,3.8,.86,1.5,cream);
+}
+function updateFishingVisuals(t){
+ if(!fishing.visual){
+  const root=new THREE.Group(),float=new THREE.Group(),rod=new THREE.Group();deck.scene.add(root);root.add(float,rod);
+  const red=new THREE.MeshStandardMaterial({color:0xd3442d,roughness:.4}),white=new THREE.MeshStandardMaterial({color:0xfff5dc}),dark=new THREE.MeshStandardMaterial({color:0x44352b});
+  const bulb=new THREE.Mesh(new THREE.SphereGeometry(.23,12,8),red);float.add(bulb);box(float,.12,.65,.12,0,.38,0,white);box(float,.1,.16,.1,0,.77,0,red);
+  const shaft=new THREE.Mesh(new THREE.CylinderGeometry(.018,.035,2.4,8),dark);shaft.rotation.x=-.6;rod.add(shaft);rod.rotation.z=-.25;
+  const lineGeo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3()]);
+  const line=new THREE.Line(lineGeo,new THREE.LineBasicMaterial({color:0xeee3bd,transparent:true,opacity:.7}));root.add(line);
+  fishing.visual={root,float,rod,line};
+ }
+ const {root,float,rod,line}=fishing.visual;root.visible=!!fishing.point;if(!root.visible)return;
+ const q=fishing.point,wave=swellAt(q.x,q.y,t/1000),dip=fishing.stage==='bite'?.65:0;
+ float.position.set(q.x,-.63+wave.h*.8-dip,q.y);float.rotation.z=Math.sin(t*.002)*.12;
+ const offset=new THREE.Vector3(.48,-.55,-1.2).applyQuaternion(deck.camera.quaternion);rod.position.copy(deck.camera.position).add(offset);rod.quaternion.copy(deck.camera.quaternion);rod.rotateX(-.45);
+ const tip=new THREE.Vector3(0,1.05,-.6).applyQuaternion(rod.quaternion).add(rod.position),v=line.geometry.attributes.position;
+ v.setXYZ(0,tip.x,tip.y,tip.z);v.setXYZ(1,float.position.x,float.position.y+.5,float.position.z);v.needsUpdate=true;line.geometry.computeBoundingSphere();
+}
+
 /* ---------- first-person renderer ---------- */
 const SW=[[.86,.51,.045,.55,.34],[-.42,.91,.083,.78,.17],[.97,-.24,.16,1.05,.07]];
 function swellAt(x,z,t){let h=0,gx=0,gz=0;for(const [dx,dz,k,w,a] of SW){const p=(x*dx+z*dz)*k+t*w,c=a*k*Math.cos(p);h+=a*Math.sin(p);gx+=c*dx;gz+=c*dz}return{h,gx,gz}}
@@ -1445,6 +1545,7 @@ function drawDeck(dt,t){
   const flap=Math.max(0,Math.sin(t*.0007+g.a0));const f=.10+Math.sin(t/1000*g.f+g.a0)*.59*flap;g.wr.rotation.z=f;g.wl.rotation.z=-f}
  {const lb=deck.lb||{x:B.x,y:B.y},spd=Math.hypot(B.x-lb.x,B.y-lb.y)/Math.max(dt,.001);deck.lb={x:B.x,y:B.y};
   const strength=deck.wake.material.uniforms.speed,want=P.boat?Math.min(.96,spd/32):0;strength.value+=(want-strength.value)*Math.min(1,dt*3);deck.wake.visible=strength.value>.01}
+ updateFishingVisuals(t);
  deck.renderer.render(deck.scene,camera);
  const tag=$('#realm-tag');
  let best=null, distance=175, position;
@@ -1476,7 +1577,9 @@ function pickDeckRealm(clientX,clientY){
  camera.updateMatrixWorld();
  inspectRay.setFromCamera({x,y},camera);
  const hit=inspectRay.intersectObjects([world,boat,water],true).find(hit=>hit.object!==deck.wake);
- return hit?.object.parent?.userData.realm??null;
+ let object=hit?.object;
+ while(object){if(object.userData.fishingShop)return {fishingShop:true};if(object.userData.realm)return object.userData.realm;object=object.parent;}
+ return null;
 }
 function markerShape(p,scale){
  const size=Math.max(2,3.4/scale);
@@ -1488,6 +1591,7 @@ function pickChartRealm(clientX,clientY){
  const bounds=chartCanvas.getBoundingClientRect();
  const x=(clientX-bounds.left-cw/2)/k+(chartOverview?WW/2:P.x);
  const y=(clientY-bounds.top-ch/2)/k+(chartOverview?WH/2:P.y);
+ const shop=tackleLocation();if(shop&&Math.hypot(x-shop.x,y-shop.y)<9/k)return {fishingShop:true};
  let closest=null,distance=9/k;
  for(const {p} of PK){
   const {offsets}=markerShape(p,k);
@@ -1508,6 +1612,7 @@ function draw(t){ctx.setTransform(DPR,0,0,DPR,0,0);ctx.fillStyle=SEA;ctx.fillRec
   ctx.strokeText(I.n.toUpperCase(),x,y);ctx.fillText(I.n.toUpperCase(),x,y);
   if(I.open){ctx.font='bold '+11*u+'px monospace';ctx.fillStyle='#b5532a';ctx.strokeText('OPEN GROUND',x,y+14*u);ctx.fillText('OPEN GROUND',x,y+14*u)}
   if('letterSpacing'in ctx)ctx.letterSpacing='0px'});
+ const shop=tackleLocation();if(shop){ctx.fillStyle='#173d42';ctx.fillRect(shop.x-4*u,shop.y-4*u,8*u,8*u);ctx.font=11*u+'px Georgia';ctx.fillText('Tackle shop',shop.x,shop.y-8*u);}
  const nearbyLabels=[];
  PK.forEach(({p})=>{
   const {size,offsets}=markerShape(p,k),picked=p.path===selectedPath;
@@ -1564,7 +1669,7 @@ function draw(t){ctx.setTransform(DPR,0,0,DPR,0,0);ctx.fillStyle=SEA;ctx.fillRec
  ctx.fillStyle='#7a4f2a';ctx.strokeStyle='#3b2f22';ctx.lineWidth=1.2;ctx.beginPath();ctx.ellipse(0,0,14,6,0,0,6.283);ctx.fill();ctx.stroke();
  ctx.fillStyle='#fff8e6';ctx.beginPath();ctx.moveTo(-2,-1);ctx.lineTo(-2,-12);ctx.lineTo(9,-1);ctx.fill();ctx.stroke();ctx.restore();
  ctx.fillStyle='#b5532a';ctx.strokeStyle='#fff8e6';ctx.lineWidth=2*bs;ctx.beginPath();ctx.arc(P.x,P.y,5*bs*.8,0,6.283);ctx.fill();ctx.stroke()}
-let lt=0;function frame(t){const dt=Math.min(.05,(t-lt)/1000||0);lt=t;if(WC){applyPendingChart();step(dt);ui();if(deck.active)drawDeck(dt,t);else draw(t)}requestAnimationFrame(frame)}
+let lt=0;function frame(t){const dt=Math.min(.05,(t-lt)/1000||0);lt=t;if(WC){applyPendingChart();step(dt);tickFishing(t);ui();if(deck.active)drawDeck(dt,t);else draw(t)}requestAnimationFrame(frame)}
 function resize(){cw=wrap.clientWidth;ch=wrap.clientHeight;cv.width=cw*DPR;cv.height=ch*DPR;if(chartOverview&&WW&&WH)k=Math.min(cw/WW,ch/WH)*.94;sizeDeck()}
 addEventListener('resize',resize);
 $('#zi').onclick=()=>{chartOverview=false;k=Math.min(2.5,k*1.3);};
@@ -1572,7 +1677,7 @@ $('#zo').onclick=()=>{chartOverview=false;k=Math.max(.16,k/1.3);};
 $('#zl').onclick=()=>{chartOverview=!chartOverview;k=chartOverview?Math.min(cw/WW,ch/WH)*.94:1;};
 /* ---------- data ---------- */
 function go(rows,ds,source,real,keepPosition=false,all=rows){
- if(!keepPosition){cancelTour();pendingMap=null;}
+ if(!keepPosition){cancelTour();pendingMap=null;if(fishing.point)stopFishing('Line reeled in while changing charts.');}
  pausedStops=null;setup(rows,ds,keepPosition);if(chartOverview)k=Math.min(cw/WW,ch/WH)*.94;catalogueRows=all;
  $('#src').textContent=source;$('#badge').style.display=real?'none':'';
  lastHtml='';renderSearch();
@@ -1819,7 +1924,7 @@ function mapRecords(paths,window){
  const locations=[[-385,-340],[375,-315],[-425,370],[385,360],[0,1000]];
  for(const [i,n] of liveCategories.entries()){
   const active=all.filter(p=>p.cat===n&&p.txs>0).sort((a,b)=>b.txs-a.txs||a.path.localeCompare(b.path));
-  if(!active.length)continue;
+  if(!active.length&&n!=='games')continue;
   const extras=active.length<3?all.filter(p=>p.cat===n&&!p.txs&&p.olderBlock)
    .sort((a,b)=>b.olderBlock-a.olderBlock||a.path.localeCompare(b.path)).slice(0,2)
    .map(p=>({...p,older:true})): [];
@@ -1834,7 +1939,7 @@ function mapRecords(paths,window){
 let pendingMap=null;
 const pendingChartNote=' · terrain update at a jetty';
 function readyForChart(districts){
- if(P.boat||P.swim||drag||ptr||walkKeys.some(key=>keys[key]))return false;
+ if(fishing.stage==='waiting'||fishing.stage==='bite'||!$('#fishing-panel').hidden||P.boat||P.swim||drag||ptr||walkKeys.some(key=>keys[key]))return false;
  const dock=jettyAt(P.x,P.y);
  if(!dock)return false;
  return activeMode!==network.id||districts.some(d=>d.n===dock.I.n);
