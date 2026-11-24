@@ -44,10 +44,11 @@ canvas{position:absolute;left:0;top:0;width:100%;height:100%}
 
 #fishing-panel{position:absolute;right:12px;bottom:16px;z-index:5;width:min(340px,calc(100% - 24px));max-height:70%;overflow:auto;padding:18px;background:#fff8e6f5;border:2px solid #80654a;box-shadow:0 6px 25px #182b2855;line-height:1.5;font-size:16px;touch-action:pan-y;user-select:text}
 #fishing-panel[hidden]{display:none}#fishing-panel h2{font-size:22px;margin:0 30px 5px 0}#fishing-panel p{margin:8px 0}#fishing-panel button{padding:8px 12px;font-size:16px}#fishing-panel .close{position:absolute;right:8px;top:7px;padding:0 7px}#fish-status{min-height:50px}#catch-list{padding:0;list-style:none;font-size:14px}#catch-list li{padding:4px 0;border-bottom:1px solid #80654a33}.ctl button#fish-open{width:auto;height:34px;padding:0 10px;font-size:14px}
+#fish-quiz{margin:8px 0 14px;padding:12px;border:1px solid #80654a;background:#f4ead0}#fish-quiz[hidden],#fish-board[hidden]{display:none}#fish-question{display:block;margin-bottom:8px}#fish-answers{display:grid;gap:6px}#fish-answers button{text-align:left}
 </style></head><body>
 <header><h1>Realm Ordnance<span id="badge">SYNTHETIC DEMO</span></h1><div id="src"></div></header>
 <div class="bar"><select id="network" aria-label="Network"><option value="mainnet">Mainnet</option><option value="onyx">Onyx testnet</option></select><select id="blocks" aria-label="Activity window"><option value="1200">1,200 blocks</option><option value="2400">2,400 blocks</option><option value="5000" selected>5,000 blocks</option></select><button id="live" type="button">Pause live</button><input id="search" type="search" placeholder="Search realms" aria-label="Search realms"><span id="live-state" role="status"></span><button id="bF">Load Onyx CSVs (data/plots + data/districts)</button><input id="cf" type="file" accept=".csv,.txt" multiple hidden></div><div id="search-results"></div>
-<div id="wrap"><canvas id="c" aria-label="Archipelago chart"></canvas><canvas id="deck" aria-label="First-person archipelago" hidden></canvas><div id="nav" hidden><strong id="heading"></strong><small id="journey"></small></div><div id="realm-tag" hidden></div><div class="ctl"><button id="view" type="button">First person</button><button id="tour" type="button" hidden>Auto Tour</button><button id="fish-open" type="button">Fishing</button><button id="zi">+</button><button id="zo">−</button><button id="zl" title="Fit archipelago">Fit</button></div><button id="act" type="button"></button><aside id="inspect" aria-label="Realm details" hidden><button id="close-inspect" type="button" aria-label="Close realm details">×</button><div id="inspect-body" aria-live="polite"></div></aside><aside id="fishing-panel" aria-label="Tackle shop and catch book" hidden><button class="close" id="fish-close" aria-label="Close fishing">×</button><h2>The Reel Deal</h2><small>Games jetty tackle shop · just for fun</small><p id="fish-status" role="status" aria-live="polite"></p><button id="fish-action" type="button">Borrow a rod</button> <button id="fish-book" type="button">Catch book</button><ul id="catch-list" hidden></ul></aside><div id="helm" hidden aria-label="Movement controls"><span></span><button data-key="w" aria-label="Forward">↑</button><span></span><button data-key="a" aria-label="Left">←</button><button data-key="s" aria-label="Reverse">↓</button><button data-key="d" aria-label="Right">→</button></div></div>
+<div id="wrap"><canvas id="c" aria-label="Archipelago chart"></canvas><canvas id="deck" aria-label="First-person archipelago" hidden></canvas><div id="nav" hidden><strong id="heading"></strong><small id="journey"></small></div><div id="realm-tag" hidden></div><div class="ctl"><button id="view" type="button">First person</button><button id="tour" type="button" hidden>Auto Tour</button><button id="fish-open" type="button">Fishing</button><button id="zi">+</button><button id="zo">−</button><button id="zl" title="Fit archipelago">Fit</button></div><button id="act" type="button"></button><aside id="inspect" aria-label="Realm details" hidden><button id="close-inspect" type="button" aria-label="Close realm details">×</button><div id="inspect-body" aria-live="polite"></div></aside><aside id="fishing-panel" aria-label="Tackle shop and catch book" hidden><button class="close" id="fish-close" aria-label="Close fishing">×</button><h2>The Reel Deal</h2><small>Games jetty tackle shop · just for fun</small><p id="fish-status" role="status" aria-live="polite"></p><div id="fish-quiz" hidden><strong id="fish-question"></strong><div id="fish-answers"></div></div><button id="fish-action" type="button">Borrow a rod</button> <button id="fish-book" type="button">Catch book</button> <button id="fish-board" type="button" hidden>Board the boat</button><ul id="catch-list" hidden></ul></aside><div id="helm" hidden aria-label="Movement controls"><span></span><button data-key="w" aria-label="Forward">↑</button><span></span><button data-key="a" aria-label="Left">←</button><button data-key="s" aria-label="Reverse">↓</button><button data-key="d" aria-label="Right">→</button></div></div>
 <div id="info"></div>
 <div id="key"><b>Key:</b> one island per category · island area follows charted realm count · height: successful call transactions · width: distinct callers · footprint: active blocks · Older sightings and offshore realms are marked · WASD or arrows to move · drag to look · click a building to inspect · E to board or land · Auto Tour is available aboard.</div>
 <footer style="margin:10px 0"><a href="https://gpas.onyx.testnets.gno.land/?path=gno.land/r/g19j4y5lzwkcuguf8a95pjueuhn7ay58gm0y3wen/realmordnance" target="_blank" rel="noopener">Onyx package status</a> · <span id="pkg-state">Realm Ordnance package on Onyx</span></footer>
@@ -191,7 +192,10 @@ function mk(I){
   const apron=.021*smooth(inland/.20);
   const rising=upland*smooth((inland-.025)/.63);
   const rolling=.012*(texture(x-coast.x,y-coast.y)-.5)*smooth(inland/.22);
-  return C+apron+rising+rolling;
+  // Empty Games still has rolling natural ground, never invented realm summits.
+  const natural=I.n==='games'&&I.empty ? .14*smooth(inland/.42)*(
+   .55+.45*Math.sin((x-coast.x)/23+seed*.001)*Math.cos((y-coast.y)/28)) :0;
+  return C+apron+rising+rolling+natural;
  };
  I.ground=ground;
  I.F=(x,y)=>{
@@ -549,7 +553,7 @@ function step(dt){
  if(P.boat){B.x=P.x;B.y=P.y;B.hd=P.hd;}
 }
 function houseBlocked(x,y){
- const shop=tackleLocation();if(shop&&Math.hypot(x-shop.x,y-shop.y)<4.5)return true;
+ if(tackleWall(x,y))return true;
  for(const {p} of PK){if(p.offshore)continue;
   const size=p.txs>=3?1.34:1,offs=buildingsFor(p);
   for(const [ox,oz] of offs)if(Math.hypot(x-(p.lx+ox),y-(p.ly+oz))<2.4*size)return true;
@@ -575,6 +579,9 @@ function act(){
  if(!cur)return;
  if(cur.act==='climb'){const j=cur.j,a=Math.max(1,Math.min(j.length-1,alongJetty(j,P.x,P.y)));P.x=j.x0+j.dx*a;P.y=j.y0+j.dy*a;P.swim=false;deck.eye=null;deck.sy=null;cur=null;return}
  if(cur.act==='board'){
+  if(cur.j){B.x=cur.j.bx;B.y=cur.j.by;B.hd=Math.atan2(cur.j.dy,cur.j.dx);dockSeen=cur.j;}
+  if(fishing.stage!=='idle')stopFishing('Line reeled in while boarding.');
+  $('#fishing-panel').hidden=true;
   P.boat=true;P.swim=false;deck.sy=null;P.x=B.x;P.y=B.y;
   if(dockSeen)P.hd=Math.atan2(dockSeen.dy,dockSeen.dx);
   tourMessage='';deck.eye=null;
@@ -627,7 +634,7 @@ function ui(){
   h='<b>At sea</b> · '+JT.length+' '+(JT.length===1?'island':'islands')+' · '+(deck.active?'W/S throttle · A/D steer':'WASD or arrows to sail');
  }else{
   const footJetty=jettyAt(P.x,P.y);
-  cur=footJetty&&gap(P,B)<34?{act:'board',t:'Board the boat'}:null;
+  cur=footJetty&&alongJetty(footJetty,P.x,P.y)>=footJetty.length-27?{act:'board',j:footJetty,t:'Board the boat'}:null;
   if(footJetty)h='<b>'+esc(footJetty.I.n)+' jetty</b> · Walk to the end of the jetty to board.';
   else if(I)h='<b>'+esc(I.n)+' island</b> · '+(I.ps.length-1)+' charted realms · Click a building to inspect its realm.';
   if(P.swim){
@@ -636,7 +643,7 @@ function ui(){
    h='<b>In the water</b> · Swim under the jetty, climb back up, or swim ashore.';
   }
  }
- if(!P.boat&&!P.swim&&nearTackleShop())cur={act:'tackle',t:'Visit the tackle shop'};
+ if(!P.boat&&!P.swim&&insideTackleShop())cur={act:'tackle',t:'Browse the tackle shop'};
  const plotted=PK.find(({p})=>p.path===selectedPath)?.p;
  const near=PK.reduce((best,{p})=>{
   if(Boolean(p.offshore)!==P.boat)return best;
@@ -670,11 +677,37 @@ function ui(){
 const fishSpecies=[{name:'Mackerel',icon:'🐟',min:22,max:43,weight:40},{name:'Sea bass',icon:'🐟',min:25,max:70,weight:27},{name:'Pollock',icon:'🐟',min:30,max:85,weight:18},{name:'Golden wrasse',icon:'🐠',min:15,max:38,weight:10},{name:'An old boot',icon:'🥾',min:28,max:28,weight:4},{name:'Message in a bottle',icon:'🍾',min:0,max:0,weight:1}];
 let fishingSaved={rod:false,catches:[]};
 try{const saved=JSON.parse(localStorage.getItem('realm-ordnance-fishing-v1'));if(saved&&Array.isArray(saved.catches))fishingSaved={rod:!!saved.rod,catches:saved.catches.filter(c=>fishSpecies.some(f=>f.name===c.name)&&Number.isFinite(c.cm)).slice(-100)};}catch{}
-const fishing={...fishingSaved,stage:'idle',due:0,until:0,point:null,origin:null,message:'',visual:null};
+const fishing={...fishingSaved,stage:'idle',due:0,until:0,point:null,origin:null,message:'',visual:null,quiz:null};
+const fishingQuestions=[
+ {q:'In Go, what does len("gno") return?',a:['3','2','4'],correct:0},
+ {q:'Which Go keyword starts a function?',a:['func','function','def'],correct:0},
+ {q:'What does this Go expression produce: 2 + 3?',a:['5','23','6'],correct:0},
+ {q:'Which Go type stores true or false?',a:['bool','string','int'],correct:0},
+ {q:'Which Go keyword repeats a loop?',a:['for','repeat','while'],correct:0},
+ {q:'In Go, what does len([]int{4, 8}) return?',a:['2','8','12'],correct:0},
+ {q:'What does this Go expression produce: 7 > 3?',a:['true','false','7'],correct:0},
+ {q:'Which Go declaration gives x the value 5?',a:['x := 5','x =: 5','let x = 5'],correct:0}
+];
+function askFishingQuiz(kind){
+ const question=fishingQuestions[Math.floor(Math.random()*fishingQuestions.length)];
+ const rotation=Math.floor(Math.random()*3),answers=question.a.map((_,i)=>question.a[(i+rotation)%3]);
+ fishing.quiz={kind,question,answers,correct:(3-rotation)%3};fishing.stage='quiz';refreshFishing();
+}
+function answerFishingQuiz(choice){
+ const quiz=fishing.quiz;if(!quiz)return;
+ fishing.quiz=null;
+ if(choice!==quiz.correct){stopFishing(quiz.kind==='cast'?'Wrong answer — your cast went astray. Try again.':'Wrong answer — the fish slipped off the hook!');return;}
+ if(quiz.kind==='cast')beginFishing();else catchFish();
+}
 function saveFishing(){try{localStorage.setItem('realm-ordnance-fishing-v1',JSON.stringify({rod:fishing.rod,catches:fishing.catches}));}catch{}}
 function gamesDock(){return JT.find(j=>/^(games?|gaming)$/i.test(j.I.n));}
-function tackleLocation(){const j=gamesDock();return j?{x:j.x0-j.dy*9-j.dx*3,y:j.y0+j.dx*9-j.dy*3,j}:null;}
-function nearTackleShop(){const q=tackleLocation();return !!q&&(gap(P,q)<27||jettyAt(P.x,P.y)===q.j);}
+function tackleLocation(){const j=gamesDock();return j?{x:j.x0-j.dx*15-j.dy*6,y:j.y0-j.dy*15+j.dx*6,j}:null;}
+function shopCoordinates(x,y){const q=tackleLocation();if(!q)return null;return {x:(x-q.x)*q.j.dx+(y-q.y)*q.j.dy,z:-(x-q.x)*q.j.dy+(y-q.y)*q.j.dx};}
+function insideTackleShop(){const v=shopCoordinates(P.x,P.y);return !!v&&!P.boat&&!P.swim&&Math.abs(v.x)<5.3&&Math.abs(v.z)<4.4;}
+function nearTackleShop(){const q=tackleLocation();return !!q&&!P.boat&&!P.swim&&gap(P,q)<13;}
+function tackleWall(x,y){const v=shopCoordinates(x,y);if(!v||Math.abs(v.x)>6.2||Math.abs(v.z)>5.25)return false;
+ return Math.abs(v.z)>4.5||v.x< -5.6||(v.x>5.6&&Math.abs(v.z)>2.2);
+}
 function fishingSpot(){
  if(P.swim||!deck.active)return null;
  const j=jettyAt(P.x,P.y);
@@ -687,18 +720,29 @@ function fishingSpot(){
  }
  return null;
 }
+let renderedFishingQuiz=null;
 function refreshFishing(){
  const status=$('#fish-status'),action=$('#fish-action');
- if(fishing.stage==='waiting'){status.textContent='Line is out. Watch the red float… wait for it to dip.';action.textContent='Reel in';action.disabled=false;}
+ const quiz=$('#fish-quiz');quiz.hidden=!fishing.quiz;action.hidden=!!fishing.quiz;
+ if(fishing.quiz){
+  status.textContent=fishing.quiz.kind==='cast'?'Answer to cast your line.':'A bite! Answer to reel it in.';
+  if(renderedFishingQuiz!==fishing.quiz){
+   renderedFishingQuiz=fishing.quiz;$('#fish-question').textContent=fishing.quiz.question.q;
+   const answers=$('#fish-answers');answers.replaceChildren();
+   fishing.quiz.answers.forEach((answer,i)=>{const b=document.createElement('button');b.type='button';b.textContent=answer;b.onclick=()=>answerFishingQuiz(i);answers.append(b);});
+  }
+ }else if(fishing.stage==='waiting'){status.textContent='Line is out. Watch the red float… wait for it to dip.';action.textContent='Reel in';action.disabled=false;}
  else if(fishing.stage==='bite'){status.textContent='A bite! The float is under — strike now!';action.textContent='Strike!';action.disabled=false;}
- else if(!fishing.rod){status.textContent=nearTackleShop()?'Welcome! Borrow a rod, then cast from any jetty or your boat. No payment needed.':'Visit The Reel Deal beside the Games island jetty to borrow a rod.';action.textContent='Borrow a rod';action.disabled=!nearTackleShop()||P.boat||P.swim;}
+ else if(!fishing.rod){status.textContent=insideTackleShop()?'Welcome inside The Reel Deal! Borrow a rod, then cast from any jetty or your boat.':'Walk into The Reel Deal at the land end of the Games jetty to borrow a rod.';action.textContent='Borrow a rod';action.disabled=!insideTackleShop();}
  else{status.textContent=fishing.message||'Rod ready. Fish from a jetty or stop the boat to cast.';action.textContent='Cast a line';action.disabled=!fishingSpot();}
+ if(!fishing.quiz)renderedFishingQuiz=null;
+ $('#fish-board').hidden=cur?.act!=='board';
  const list=$('#catch-list');
  const contents=fishing.catches.length?'<li><b>'+fishing.catches.length+' catches · '+new Set(fishing.catches.map(c=>c.name)).size+' / '+fishSpecies.length+' discoveries</b></li>'+fishing.catches.slice().reverse().map(c=>'<li>'+esc(c.icon)+' '+esc(c.name)+(c.cm?' · '+c.cm+' cm':'')+'</li>').join(''):'<li>Your catch book is empty. The first one is out there.</li>';
  if(list.innerHTML!==contents)list.innerHTML=contents;
 }
 function openFishing(){clearKeys();drag=null;ptr=null;$('#fishing-panel').hidden=false;refreshFishing();}
-function stopFishing(message=''){fishing.stage='idle';fishing.point=null;fishing.origin=null;fishing.message=message;refreshFishing();}
+function stopFishing(message=''){fishing.stage='idle';fishing.quiz=null;fishing.point=null;fishing.origin=null;fishing.message=message;refreshFishing();}
 function closeFishing(){stopFishing();$('#fishing-panel').hidden=true;}
 function beginFishing(now=performance.now()){
  const point=fishingSpot();if(!point){fishing.message='Step onto a jetty or board your boat to fish.';refreshFishing();return;}
@@ -708,35 +752,51 @@ function beginFishing(now=performance.now()){
 function tickFishing(now){
  if(fishing.stage!=='waiting'&&fishing.stage!=='bite')return;
  if(!deck.active||P.swim||!fishing.origin||gap(P,fishing.origin)>2||P.boat!==fishing.origin.boat){stopFishing('Line reeled in as you moved.');return;}
- if(fishing.stage==='waiting'&&now>=fishing.due){fishing.stage='bite';fishing.until=now+2400;refreshFishing();}
+ if(fishing.stage==='waiting'&&now>=fishing.due){fishing.stage='bite';fishing.until=now+10000;refreshFishing();}
  else if(fishing.stage==='bite'&&now>fishing.until)stopFishing('It got away! Try another cast.');
 }
 function catchFish(now=performance.now()){
- if(fishing.stage!=='bite'||now>fishing.until){stopFishing('It got away! Try another cast.');return null;}
+ if((fishing.stage!=='bite'&&fishing.stage!=='quiz')||(fishing.stage==='bite'&&now>fishing.until)){stopFishing('It got away! Try another cast.');return null;}
  let roll=Math.random()*100,fish=fishSpecies[0];for(const candidate of fishSpecies){roll-=candidate.weight;if(roll<0){fish=candidate;break;}}
  const cm=fish.min?Math.round(fish.min+Math.random()*(fish.max-fish.min)):0;
  const caught={name:fish.name,icon:fish.icon,cm};fishing.catches.push(caught);fishing.catches=fishing.catches.slice(-100);saveFishing();
  stopFishing(fish.name==='Message in a bottle'?'A message in a bottle: “Somewhere out there, a realm is waiting for its first visitor.”':fish.name==='An old boot'?'An old boot! The sea has a sense of humour.':fish.icon+' Caught a '+fish.name.toLowerCase()+' — '+cm+' cm! Added to your catch book.');return caught;
 }
 $('#fish-open').onclick=openFishing;$('#fish-close').onclick=closeFishing;
+$('#fish-board').onclick=()=>{if(cur?.act==='board')act();};
 $('#fish-book').onclick=()=>{$('#catch-list').hidden=!$('#catch-list').hidden;refreshFishing();};
 $('#fish-action').onclick=()=>{
- if(!fishing.rod){if(!nearTackleShop()||P.boat||P.swim)return;fishing.rod=true;saveFishing();fishing.message='A rod, a float and a bit of patience. All yours — head down the jetty!';refreshFishing();}
- else if(fishing.stage==='bite')catchFish();else if(fishing.stage==='waiting')stopFishing('A little early! Wait for the float to dip before striking.');else beginFishing();
+ if(!fishing.rod){if(!insideTackleShop())return;fishing.rod=true;saveFishing();fishing.message='A rod, a float and a bit of patience. All yours — head down the jetty!';refreshFishing();}
+ else if(fishing.stage==='bite')askFishingQuiz('strike');else if(fishing.stage==='waiting')stopFishing('A little early! Wait for the float to dip before striking.');else askFishingQuiz('cast');
 };
 function buildTackleShop(world){
  const q=tackleLocation();if(!q)return;
- const {wood,cream,blue,trim}=deck,g=new THREE.Group();g.position.set(q.x,meshElevation(q.x,q.y),q.y);g.userData.fishingShop=true;world.add(g);
- const base=box(g,7,.4,5.5,0,.2,0,wood);box(g,6,3.9,4.8,0,2.35,0,cream);
- const roof=new THREE.Mesh(cottageRoof(7,1.65,5.7),blue);roof.position.y=4.3;g.add(roof);
- box(g,1.3,2.7,.12,-1.5,1.8,2.45,wood);box(g,1.7,1.3,.15,1.3,2.6,2.47,blue);
- for(const x of [.45,1.3,2.15])box(g,.08,1.5,.18,x,2.6,2.55,cream);
- box(g,1.9,.08,.18,1.3,2.6,2.55,cream);
- const canvas=document.createElement('canvas');canvas.width=512;canvas.height=128;const c=canvas.getContext('2d');c.fillStyle='#173d42';c.fillRect(0,0,512,128);c.strokeStyle='#e8d6a5';c.lineWidth=7;c.strokeRect(5,5,502,118);c.fillStyle='#fff4d2';c.textAlign='center';c.font='bold 42px Georgia';c.fillText('THE REEL DEAL',256,55);c.font='25px Georgia';c.fillText('Tackle & tall tales',256,96);
+ const {wood,cream,blue,trim}=deck,g=new THREE.Group();
+ g.position.set(q.x,meshElevation(q.x,q.y),q.y);
+ g.rotation.y=-Math.atan2(q.j.dy,q.j.dx);g.userData.fishingShop=true;world.add(g);
+ const timber=new THREE.MeshStandardMaterial({color:0x8b5c36,roughness:.9}),wall=new THREE.MeshStandardMaterial({color:0xf3dfb6,roughness:.94}),roofMat=new THREE.MeshStandardMaterial({color:0x8c4f35,roughness:.9}),floor=new THREE.MeshStandardMaterial({color:0x735138,roughness:.9});
+ // The open front faces the jetty. There is space to walk through to the counter.
+ box(g,12,.65,10,0,-.15,0,wood);box(g,11.8,.15,9.8,0,.23,0,floor);
+ box(g,.55,4.8,10,-5.75,2.7,0,wall);
+ for(const z of [-4.75,4.75])box(g,11.5,4.8,.5,0,2.7,z,wall);
+ for(const z of [-3.65,3.65])box(g,.5,4.8,2.7,5.75,2.7,z,wall);
+ box(g,.55,1.05,4.8,5.75,4.55,0,wall);
+ for(const z of [-2.25,2.25])box(g,.25,4.1,.28,5.85,2.2,z,timber);
+ box(g,.25,.25,4.7,5.85,4.25,0,timber);
+ const top=new THREE.Mesh(cottageRoof(11.4,2.5,13.3),roofMat);top.position.y=5.15;top.rotation.y=Math.PI/2;g.add(top);
+ for(const z of [-5.65,5.65])box(g,12.4,.22,.18,0,5.04,z,timber);
+ // Window frames, a lantern and a sign are readable from the boat.
+ for(const z of [-4.96,4.96]){box(g,2.2,1.8,.09,1.2,3.3,z,blue);box(g,2.4,.13,.16,1.2,3.3,z,cream);box(g,.13,2,.16,1.2,3.3,z,cream);}
+ const canvas=document.createElement('canvas');canvas.width=512;canvas.height=128;const c=canvas.getContext('2d');c.fillStyle='#173d42';c.fillRect(0,0,512,128);c.strokeStyle='#e8d6a5';c.lineWidth=7;c.strokeRect(5,5,502,118);c.fillStyle='#fff4d2';c.textAlign='center';c.font='bold 39px Georgia';c.fillText('THE REEL DEAL',256,55);c.font='25px Georgia';c.fillText('Tackle & tall tales',256,96);
  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
- const sign=new THREE.Mesh(new THREE.PlaneGeometry(6,1.5),new THREE.MeshStandardMaterial({map:texture,roughness:.8,side:THREE.DoubleSide}));sign.position.set(0,4.1,2.65);sign.userData.trailMap=texture;g.add(sign);
- for(const x of [-2.6,2.5]){const rod=box(g,.07,4.5,.07,x,2.4,2.9,wood);rod.rotation.z=x*.07;}
- box(g,1.5,.8,1,3.8,.4,1.5,blue);box(g,1.6,.12,1.1,3.8,.86,1.5,cream);
+ const sign=new THREE.Mesh(new THREE.PlaneGeometry(7.3,1.85),new THREE.MeshStandardMaterial({map:texture,roughness:.8,side:THREE.DoubleSide}));sign.rotation.y=Math.PI/2;sign.position.set(6.83,5.7,0);sign.userData.trailMap=texture;g.add(sign);
+ for(const z of [-3.6,3.6]){const lamp=new THREE.Mesh(new THREE.SphereGeometry(.23,10,8),new THREE.MeshStandardMaterial({color:0xffdeb0,emissive:0xffa03b,emissiveIntensity:.8}));lamp.position.set(6,3.9,z);g.add(lamp);}
+ // Shelves and rods show that the shop has an interior, not a painted facade.
+ box(g,1.15,1.4,7.3,-3.9,1.2,0,timber);
+ for(const z of [-2.7,-.9,.9,2.7]){box(g,.18,2.6,.16,-4.1,2.6,z,wood);box(g,.5,.24,.32,-3.4,2.45,z,blue);}
+ box(g,1.6,1,2.6,-1.2,.7,2.85,wood);
+ for(const z of [-3,-2.6,-2.2]){const rod=box(g,.06,3.6,.06,-4.6,2.8,z,timber);rod.rotation.z=-.12;}
+ box(g,1.3,.9,.9,3.9,.45,-3,blue);
 }
 function updateFishingVisuals(t){
  if(!fishing.visual){
