@@ -592,7 +592,7 @@ function settlement(p){
 }
 function buildingsFor(p){return settlement(p)==='Cottage'?[[0,0]]:[[0,0],[4,4],[-4,3]]}
 function building(p){
- if(p.offshore)return p.txs>=16?'Sea tower':p.txs>=3?'Sea station':'Buoy';
+ if(p.offshore)return p.txs>=16?'Lighthouse':p.txs>=3?'Sea station':'Buoy';
  return p.txs==null?'Survey marker':settlement(p);
 }
 function realmInfo(p){
@@ -1512,8 +1512,18 @@ function draw(t){ctx.setTransform(DPR,0,0,DPR,0,0);ctx.fillStyle=SEA;ctx.fillRec
  PK.forEach(({p})=>{
   const {size,offsets}=markerShape(p,k),picked=p.path===selectedPath;
   if(p.offshore){
-   ctx.fillStyle=picked?'#a74026':'#396777';ctx.strokeStyle='#fff8e6';ctx.lineWidth=u;
-   ctx.beginPath();ctx.moveTo(p.lx,p.ly-size*1.4);ctx.lineTo(p.lx+size,p.ly);ctx.lineTo(p.lx,p.ly+size*1.4);ctx.lineTo(p.lx-size,p.ly);ctx.closePath();ctx.fill();ctx.stroke();
+   ctx.strokeStyle='#fff8e6';ctx.lineWidth=u;
+   if(p.txs>=16){
+    ctx.fillStyle=picked?'#a74026':'#a65035';ctx.beginPath();ctx.arc(p.lx,p.ly,size*1.45,0,Math.PI*2);ctx.fill();ctx.stroke();
+    ctx.fillStyle='#f0ddad';ctx.beginPath();ctx.arc(p.lx,p.ly,size*.82,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#ffcf83';ctx.beginPath();ctx.arc(p.lx,p.ly,size*.35,0,Math.PI*2);ctx.fill();
+   }else if(p.txs<3){
+    ctx.fillStyle=picked?'#a74026':'#b5532a';ctx.beginPath();ctx.arc(p.lx,p.ly,size*1.1,0,Math.PI*2);ctx.fill();ctx.stroke();
+    ctx.fillStyle='#fff8e6';ctx.fillRect(p.lx-size*.73,p.ly-size*.12,size*1.46,size*.24);
+    ctx.beginPath();ctx.arc(p.lx,p.ly-size*1.35,size*.26,0,Math.PI*2);ctx.fill();
+   }else{
+    ctx.fillStyle=picked?'#a74026':'#396777';ctx.beginPath();ctx.moveTo(p.lx,p.ly-size*1.4);ctx.lineTo(p.lx+size,p.ly);ctx.lineTo(p.lx,p.ly+size*1.4);ctx.lineTo(p.lx-size,p.ly);ctx.closePath();ctx.fill();ctx.stroke();
+   }
   }else if(p.txs==null||p.older){
    ctx.strokeStyle='#654330';ctx.lineWidth=u;ctx.setLineDash([2*u,2*u]);ctx.beginPath();ctx.arc(p.lx,p.ly,size,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
   }else{
