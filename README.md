@@ -2,11 +2,11 @@
 
 A walkable, live chart of Gno.land. Sail an archipelago whose islands are realm categories, walk up to buildings to inspect their realms, and use the open ground to spot places where builders could add something new.
 
-The browser scans Gno RPC for realm calls in a chosen block window. Island area follows the number of charted realms in that category. Each realm shapes its own rise: height follows successful calls, width follows distinct callers, and footprint follows active blocks. Small settlements grow from cottages to villages and castles as activity grows. These are visual measures of use, not endorsements or a measure of code quality. Categories inferred from names may be wrong.
+Every deployed realm on the selected chain is planted on the map from that chain's RPC catalogue (`vm/qpaths`). There is one island per category (defi, games, social, dao, tools, nft, validators, and uncategorised), plus a tiny genesis island at the centre. Island area follows the number of deployed realms in that category, not how busy they are. Usage only changes how each building looks: height follows successful calls, width follows distinct callers, and footprint follows active blocks, all verified from RPC in the selected activity window. Small settlements grow from cottages to villages and castles as activity grows. These are visual measures of use, not endorsements or a measure of code quality. They also show which categories have deploys but little recent use. Categories inferred from names may be wrong.
 
 ## Explore
 
-Open `web/index.html` in a modern desktop browser. There is no build step. The view opens on empty sea with a plain loading status. A tiny genesis island at the centre rises first and shows block 1 of the selected network (height, time, chain ID and block hash) read from that network's RPC. The category islands then rise out of the water as the live scan returns their activity. Choose Mainnet or Onyx and a block window; the browser fetches and verifies activity from that chain's RPC. The searchable catalogue can contain more realms than the chart: the chart shows active realms and a few older sightings in sparse categories. A quiet Games island remains available for its jetty and tackle shop even if no Games realm was active in the window.
+Open `web/index.html` in a modern desktop browser. There is no build step. The view opens on empty sea with a plain loading status. A tiny genesis island at the centre rises first and shows block 1 of the selected network (height, time, chain ID and block hash) read from that network's RPC. As soon as the realm catalogue returns, every deployed realm is planted and the category islands rise from the water. Choose Mainnet or Onyx to load that chain's full catalogue. The activity window only measures use in recent blocks; changing it does not hide or reveal realms. Each island then independently checks and verifies its own activity numbers from RPC, so a slow island does not block the others. A quiet Games island remains available for its jetty and tackle shop even if no Games realm was called in the window.
 
 - Open the chart for an overhead view and search realm names and paths.
 - Switch to first person, use WASD or arrows to walk, and drag to look. Click a building to inspect its realm and follow **Enter realm**. Click the marker on the genesis island to inspect block 1.
@@ -15,6 +15,21 @@ Open `web/index.html` in a modern desktop browser. There is no build step. The v
 - Live updates do not teleport someone mid-walk or mid-sail. Changed terrain is applied when you return to a jetty.
 
 Three.js is bundled inside the HTML. The 3D view needs WebGL; live chain scans need internet access. RPC access from a browser also depends on the selected endpoint being reachable and permitting browser requests. If a scan fails, the status line says so and the scan retries; no sample terrain is drawn in its place. If block 1 cannot be read, the genesis island says its details are unavailable.
+
+## Run this copy
+
+1. Unzip the archive and open the folder that contains `web/` and `README.md`.
+2. In Terminal, go into that folder and start a local server:
+
+       python3 -m http.server 8765
+
+3. In Chrome or Safari, open [http://127.0.0.1:8765/web/index.html](http://127.0.0.1:8765/web/index.html).
+4. The view starts on empty sea. A tiny genesis island rises first. As soon as the realm catalogue returns (usually under a second), every deployed realm is planted and the category islands rise. Buildings begin as unmeasured cottages.
+5. Each island then independently checks verified on-chain use in the selected activity window (often about 15–30 seconds). Usage only changes how buildings look (cottage, village, castle, and the height, width and footprint of each plot). You do not need to change the block-window menu to find or plant realms.
+6. Use the network menu to switch between Mainnet and Onyx. The browser remembers the last catalogue so a return visit can plant immediately while it refreshes.
+7. You can instead double-click `web/index.html` and open it as a file. If the map stays on empty sea or only the genesis island, use the local server in steps 2–3. Some browsers restrict network access from `file://`.
+
+Live Mainnet and Onyx scans need an internet connection to that chain's RPC. **Load Onyx realm** still reads the owner-published on-chain snapshot, which is a stored chart and may show fewer realms than the live catalogue.
 
 ## Gno realm on Onyx
 
@@ -37,10 +52,10 @@ Click **Load Onyx realm** in the browser to read both CSV routes directly with `
 
 ## Source and checks
 
-- `web/index.html` — single-file browser client, live scanner, chart, walk and boat modes.
+- `web/index.html` — single-file browser client, catalogue map, per-island activity checks, chart, walk and boat modes.
 - `realm/ordnance.gno` and `realm/gnomod.toml` — Onyx realm source and module path.
 - `realm/ordnance_test.gno` — Gno tests for staging, atomic publication and bounds.
 
-Run the realm tests with a compatible Gno toolchain by opening the `realm/` directory and running `gno test .`. Test the browser with a reachable RPC, including clicking **Load Onyx realm** to read the published snapshot.
+Run the realm tests with a compatible Gno toolchain by opening the `realm/` directory and running `gno test .`. Test the browser with a reachable RPC. Loading Mainnet or Onyx from the network menu should plant every deployed realm, then fill in verified activity per island. Click **Load Onyx realm** to read the published snapshot, which is a stored chart and may show fewer realms than the live catalogue.
 
 Realm Ordnance is an independent project and is not operated or endorsed by Gno.land.

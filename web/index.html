@@ -57,10 +57,10 @@ canvas{position:absolute;left:0;top:0;width:100%;height:100%}
 @media (max-width:600px){#minimap{width:112px;height:112px}}
 </style></head><body>
 <header><h1>Realm Ordnance</h1><div id="src"></div></header>
-<div class="bar"><select id="network" aria-label="Network"><option value="mainnet">Mainnet</option><option value="onyx">Onyx testnet</option></select><select id="blocks" aria-label="Activity window"><option value="1200">1,200 blocks</option><option value="2400">2,400 blocks</option><option value="5000" selected>5,000 blocks</option></select><button id="live" type="button">Pause live</button><input id="search" type="search" placeholder="Search realms" aria-label="Search realms"><span id="live-state" role="status"></span><button id="bOnyx" type="button">Load Onyx realm</button><button id="bF" type="button">Load Onyx CSVs</button><input id="cf" type="file" accept=".csv,.txt" multiple hidden></div><div id="search-results"></div>
+<div class="bar"><select id="network" aria-label="Network"><option value="mainnet">Mainnet</option><option value="onyx">Onyx testnet</option></select><select id="blocks" aria-label="Activity window" title="How far back to measure use. Changing this does not hide realms."><option value="1200">1,200 blocks</option><option value="2400">2,400 blocks</option><option value="5000" selected>5,000 blocks</option></select><button id="live" type="button">Pause live</button><input id="search" type="search" placeholder="Search realms" aria-label="Search realms"><span id="live-state" role="status"></span><button id="bOnyx" type="button">Load Onyx realm</button><button id="bF" type="button">Load Onyx CSVs</button><input id="cf" type="file" accept=".csv,.txt" multiple hidden></div><div id="search-results"></div>
 <div id="wrap"><canvas id="c" aria-label="Archipelago chart"></canvas><canvas id="deck" aria-label="First-person archipelago" hidden></canvas><div id="nav" hidden><strong id="heading"></strong><small id="journey"></small></div><div id="realm-tag" hidden></div><canvas id="minimap" aria-label="Sailing chart" hidden></canvas><div class="ctl"><button id="view" type="button">First person</button><button id="tour" type="button" hidden>Auto Tour</button><button id="zi">+</button><button id="zo">−</button><button id="zl" title="Fit archipelago">Fit</button></div><button id="act" type="button"></button><button id="fish" type="button" hidden></button><div id="strike" hidden><b>Fish on! Take your time. Read the tip, work it out, pick an answer (1 / 2 / 3).</b><div id="sk-tip"></div><pre id="sk-code"></pre><div id="sk-q"></div><div id="sk-opts"></div></div><div id="fight" hidden><div id="fg-hint"></div><div id="fg-ten"><span id="fg-zone"></span><i id="fg-mark"></i></div><div id="fg-prog"><i></i></div></div><aside id="inspect" aria-label="Realm details" hidden><button id="close-inspect" type="button" aria-label="Close realm details">×</button><div id="inspect-body" aria-live="polite"></div></aside><div id="helm" hidden aria-label="Movement controls"><span></span><button data-key="w" aria-label="Forward">↑</button><span></span><button data-key="a" aria-label="Left">←</button><button data-key="s" aria-label="Reverse">↓</button><button data-key="d" aria-label="Right">→</button></div></div>
 <div id="info"></div>
-<div id="key"><b>Key:</b> one island per category · island area follows charted realm count · height: successful call transactions · width: distinct callers · footprint: active blocks · Older sightings and offshore realms are marked · WASD or arrows to move · drag to look · click a building to inspect · E to board or land · Auto Tour is available aboard.</div>
+<div id="key"><b>Key:</b> one island per category · every deployed realm is on the map · island area follows the number of deployed realms in that category · height, width and footprint follow verified use in the selected activity window · cottages, villages and castles are visual measures of use, not endorsements · WASD or arrows to move · drag to look · click a building to inspect · E to board or land · Auto Tour is available aboard.</div>
 <footer style="margin:10px 0"><a href="https://rpc.onyx.testnets.gno.land/tx?hash=0x8bbe26bee716d1b83627d648d4562a217c95d191f7af4d0653e07441062f1130" target="_blank" rel="noopener">Onyx package transaction</a> · <span id="pkg-state">Checking Onyx package status…</span></footer>
 <script>
 console.warn('Scripts "build/three.js" and "build/three.min.js" are deprecated with r150+, and will be removed with r160. Please use ES Modules or alternatives: https://threejs.org/docs/index.html#manual/en/introduction/Installation'),
@@ -74,7 +74,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
 <script>
 const C=.06,$=s=>document.querySelector(s),cv=$('#c'),ctx=cv.getContext('2d'),wrap=$('#wrap'),SEA='#cfe3ea';
 let chartOverview=false;
-let DPR=Math.min(2,devicePixelRatio||1),cw=0,ch=0,k=1,ISL=[],PK=[],JT=[],WC,WW=0,WH=0;
+let DPR=Math.min(2,devicePixelRatio||1),cw=0,ch=0,k=1,ISL=[],PK=[],JT=[],WC,WW=0,WH=0,bakeScale=1;
 let originX=0,originY=0, catalogueRows=[], selectedPath='', liveWeb='https://gno.land', activeMode='loading';
 const focus=()=>catalogueRows.find(r=>r.path===selectedPath);
 const P={x:0,y:0,boat:false,hd:0},B={x:0,y:0,hd:0};
@@ -228,10 +228,10 @@ function mk(I){
  I.bx0=Math.max(0,coast.x-margin);I.bx1=Math.min(WW,coast.x+margin);
  I.by0=Math.max(0,coast.y-margin);I.by1=Math.min(WH,coast.y+margin);
 }
-function jetties(){JT=[];const cx=WW/2,cy=WH/2;
- ISL.forEach(I=>{const t=I.ps[0];let dx=I.genesis?0:cx-t.lx,dy=I.genesis?1:cy-t.ly;if(!dx&&!dy)dx=1;const m=Math.hypot(dx,dy);dx/=m;dy/=m;
+function placeJetty(I){const t=I.ps[0],cx=WW/2,cy=WH/2;let dx=I.genesis?0:cx-t.lx,dy=I.genesis?1:cy-t.ly;if(!dx&&!dy)dx=1;const m=Math.hypot(dx,dy);dx/=m;dy/=m;
   let x=t.lx,y=t.ly,n=0;while(I.F(x,y)>=C&&n++<500){x+=dx*3;y+=dy*3}
-  const j={I,dx,dy,x0:x-dx*18,y0:y-dy*18,x1:x+dx*60,y1:y+dy*60};j.length=Math.hypot(j.x1-j.x0,j.y1-j.y0);j.bx=j.x1-dy*22;j.by=j.y1+dx*22;I.jt=j;JT.push(j)})}
+  const j={I,dx,dy,x0:x-dx*18,y0:y-dy*18,x1:x+dx*60,y1:y+dy*60};j.length=Math.hypot(j.x1-j.x0,j.y1-j.y0);j.bx=j.x1-dy*22;j.by=j.y1+dx*22;I.jt=j;JT.push(j)}
+function jetties(){JT=[];ISL.forEach(placeJetty)}
 function seg(x,y,j){const vx=j.x1-j.x0,vy=j.y1-j.y0,t=Math.max(0,Math.min(1,((x-j.x0)*vx+(y-j.y0)*vy)/(vx*vx+vy*vy)));return Math.hypot(x-j.x0-vx*t,y-j.y0-vy*t)}
 const jettyHalfWidth=3.2;
 const alongJetty=(j,x,y)=>(x-j.x0)*j.dx+(y-j.y0)*j.dy;
@@ -255,10 +255,17 @@ function contour(c,g,nx,ny,G,l){c.beginPath();const sw=nx+1;
   const x=i*G,y=j*G,E=h=>h==='T'?[x+G*(l-a)/(b-a),y]:h==='R'?[x+G,y+G*(l-b)/(cc-b)]:h==='B'?[x+G*(l-d)/(cc-d),y+G]:[x,y+G*(l-a)/(d-a)];
   const t=TAB[idx];for(let q=0;q<t.length;q+=2){const p=E(t[q]),r=E(t[q+1]);c.moveTo(p[0],p[1]);c.lineTo(r[0],r[1])}}
  c.stroke()}
-function bake(){WC=document.createElement('canvas');WC.width=WW;WC.height=WH;const c=WC.getContext('2d');
+function worldCtx(){const c=WC.getContext('2d');c.setTransform(bakeScale,0,0,bakeScale,0,0);return c}
+function prepareWorldCanvas(){
+ const maxDim=3072;
+ bakeScale=Math.min(1,maxDim/Math.max(WW,WH,1));
+ const w=Math.max(1,Math.round(WW*bakeScale)),h=Math.max(1,Math.round(WH*bakeScale));
+ if(!WC||WC.width!==w||WC.height!==h){WC=document.createElement('canvas');WC.width=w;WC.height=h;}
+ const c=worldCtx();
  c.fillStyle=SEA;c.fillRect(0,0,WW,WH);c.strokeStyle='rgba(104,145,156,.20)';c.lineWidth=1;c.beginPath();
  for(let x=0;x<WW;x+=100){c.moveTo(x,0);c.lineTo(x,WH)}for(let y=0;y<WH;y+=100){c.moveTo(0,y);c.lineTo(WW,y)}c.stroke();
- ISL.forEach(I=>{const G=2.5,x0=I.bx0,y0=I.by0,nx=Math.ceil((I.bx1-x0)/G),ny=Math.ceil((I.by1-y0)/G),sw=nx+1,g=new Float32Array(sw*(ny+1));let gm=0;
+}
+function bakeIsland(I){const c=worldCtx();const span=Math.max(I.bx1-I.bx0,I.by1-I.by0,1);const G=Math.max(2.5,span/720);const x0=I.bx0,y0=I.by0,nx=Math.ceil((I.bx1-x0)/G),ny=Math.ceil((I.by1-y0)/G),sw=nx+1,g=new Float32Array(sw*(ny+1));let gm=0;
   for(let j=0;j<=ny;j++)for(let i=0;i<=nx;i++){const f=I.F(x0+i*G,y0+j*G);g[j*sw+i]=f;if(f>gm)gm=f}
   const off=document.createElement('canvas');off.width=nx;off.height=ny;const oc=off.getContext('2d'),im=oc.createImageData(nx,ny),d=im.data;
   for(let j=0;j<ny;j++)for(let i=0;i<nx;i++){const f=g[j*sw+i],o=(j*nx+i)*4;
@@ -280,11 +287,13 @@ function bake(){WC=document.createElement('canvas');WC.width=WW;WC.height=WH;con
   c.save();c.translate(x0,y0);c.lineJoin='round';c.strokeStyle='rgba(76,127,152,.42)';c.lineWidth=.6;[.74,.52,.32,.18].forEach(m=>contour(c,g,nx,ny,G,C*m));
   c.strokeStyle='rgba(132,88,48,.38)';c.lineWidth=.5;[.084,.116].forEach(l=>contour(c,g,nx,ny,G,l));
   for(let j=1;;j++){const l=.105+j*.048;if(l>gm)break;const ix=j%5===0;c.strokeStyle=ix?'rgba(98,61,35,.81)':'rgba(132,88,48,.55)';c.lineWidth=ix?1:.55;contour(c,g,nx,ny,G,l)}
-  c.strokeStyle='#365f70';c.lineWidth=1.22;contour(c,g,nx,ny,G,C);c.restore()});
+  c.strokeStyle='#365f70';c.lineWidth=1.22;contour(c,g,nx,ny,G,C);c.restore()}
+function bakeJetties(){const c=worldCtx();
  JT.forEach(j=>{const L=Math.hypot(j.x1-j.x0,j.y1-j.y0);c.save();c.translate(j.x0,j.y0);c.rotate(Math.atan2(j.y1-j.y0,j.x1-j.x0));
   c.fillStyle='#9a7449';c.fillRect(0,-3.2,L,6.4);c.strokeStyle='#5c4128';c.lineWidth=1;c.beginPath();for(let x=0;x<L;x+=5){c.moveTo(x,-3.2);c.lineTo(x,3.2)}c.stroke();c.strokeRect(0,-3.2,L,6.4);
   c.fillStyle='#3b2f22';for(let x=2;x<L;x+=14){c.fillRect(x,-4,2,2);c.fillRect(x,2.4,2,2)}c.restore()});
 }
+function bake(){prepareWorldCanvas();ISL.forEach(bakeIsland);bakeJetties();}
 /* ---------- navigation shared by the chart and first-person view ---------- */
 const keys={}, deck={active:false,dirty:true,pitch:-.06,eye:null};
 const chartCanvas=$('#c'), deckCanvas=$('#deck');
@@ -599,16 +608,19 @@ function act(){
  cur=null;
 }
 // A settlement reflects repeat community use within the selected block window.
+function liveStats(p){return p.liveReading??p}
 function settlement(p){
- if(p.older||p.txs==null)return 'Cottage';
- if(p.callers>=5&&p.activeBlocks>=8&&p.txs>=16)return 'Castle';
- if(p.callers>=2&&p.activeBlocks>=3)return 'Village';
+ const r=liveStats(p);
+ if(p.older||r.txs==null)return 'Cottage';
+ if(r.callers>=5&&r.activeBlocks>=8&&r.txs>=16)return 'Castle';
+ if(r.callers>=2&&r.activeBlocks>=3)return 'Village';
  return 'Cottage';
 }
 function buildingsFor(p){return settlement(p)==='Cottage'?[[0,0]]:[[0,0],[4,4],[-4,3]]}
 function building(p){
- if(p.offshore)return p.txs>=16?'Sea tower':p.txs>=3?'Sea station':'Buoy';
- return p.txs==null?'Survey marker':settlement(p);
+ const r=liveStats(p);
+ if(p.offshore)return r.txs>=16?'Sea tower':r.txs>=3?'Sea station':'Buoy';
+ return r.txs==null?'Survey marker':settlement(p);
 }
 function realmInfo(p){
  if(p.genesis)return genesisHtml(p);
@@ -798,18 +810,18 @@ function initDeck(){
  renderer.outputColorSpace=THREE.SRGBColorSpace;
  const scene=new THREE.Scene();
  scene.background=new THREE.Color(0xc4d8d6);
- scene.fog=new THREE.FogExp2(0xc4d8d6,.00115);
+ scene.fog=new THREE.FogExp2(0xc4d8d6,.00055);
  scene.add(new THREE.HemisphereLight(0xfff6de,0x506167,2.0));
  const sun=new THREE.DirectionalLight(0xffebcc,2.3);
  sun.position.set(-210,220,-160);scene.add(sun);
- const camera=new THREE.PerspectiveCamera(63,1,.22,3900);
+ const camera=new THREE.PerspectiveCamera(63,1,.22,12000);
  const pattern=sceneTexture('wave'),cloudPicture=sceneTexture('cloud'),time={value:0};
  const wavesSurface=waterMaterial(false,pattern,time),farSurface=waterMaterial(true,pattern,time);
  const nearGeo=new THREE.PlaneGeometry(900,900,300,300);nearGeo.rotateX(-Math.PI/2);
  const water=new THREE.Mesh(nearGeo,wavesSurface.material);water.position.y=-.75;water.renderOrder=2;scene.add(water);
  const farGeo=new THREE.PlaneGeometry(9000,9000,1,1);farGeo.rotateX(-Math.PI/2);
  const farWater=new THREE.Mesh(farGeo,farSurface.material);farWater.position.y=-.75;farWater.renderOrder=1;scene.add(farWater);
- const sky=new THREE.Mesh(new THREE.SphereGeometry(3000,32,16),new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,fog:false,
+ const sky=new THREE.Mesh(new THREE.SphereGeometry(10000,32,16),new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,fog:false,
   uniforms:{sun:{value:sun.position.clone().normalize()},time:{value:0},cloudPicture:{value:cloudPicture}},
   vertexShader:'varying vec3 d;void main(){d=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
   fragmentShader:`varying vec3 d;uniform vec3 sun;uniform float time;uniform sampler2D cloudPicture;
@@ -950,7 +962,7 @@ function grassGeometry(){
 function plantGrass(island,world){
  const centre=island.ps[0],radius=centre.s;
  const random=rng(island.seed^7117),noise=chartNoise(island.seed^32541);
- const count=Math.min(4400,Math.ceil(radius*radius*.34));
+ const count=Math.min(1800,Math.ceil(radius*radius*.18));
  const grass=new THREE.InstancedMesh(grassGeometry(),deck.grassMaterial??=windGrassMaterial(),count);
  const place=new THREE.Object3D(),color=new THREE.Color();
  let planted=0;
@@ -1369,7 +1381,7 @@ function rebuildDeck(){
  }
  chartSeabed();
  placeHut();
- for(const island of ISL){plantGrass(island,world);world.children.at(-1).userData.isle=island;islandFlora(island,world);world.children.at(-1).userData.isle=island}
+ for(const island of ISL){plantGrass(island,world);world.children.at(-1).userData.isle=island;islandFlora(island,world);world.children.at(-1).userData.isle=island;world.children.at(-1).userData.floraCoast=island.ps[0]}
  addHut(world);addShoals(world);
  for(const child of world.children)child.userData.baseY=child.position.y;
  deck.scene.add(world);deck.world=world;deck.dirty=false;
@@ -1389,7 +1401,7 @@ function sizeDeck(){
 let tagVector;
 
 /* ---------- fishing hut, rod, shoals, spray ---------- */
-const FISH={defi:['Yield Carp','Vault Bream','Swap Mackerel','Oracle Eel'],games:['Quest Trout','Arcade Pike','Dice Perch','Maze Minnow'],social:['Board Roach','Feed Herring','Chat Sprat'],tools:['Spanner Tench','Paste Gudgeon','Regex Ray'],dao:['Council Cod','Vote Sardine'],nft:['Mint Koi','Gallery Guppy'],infra:['Registry Eel','Faucet Flounder']};
+const FISH={defi:['Yield Carp','Vault Bream','Swap Mackerel','Oracle Eel'],games:['Quest Trout','Arcade Pike','Dice Perch','Maze Minnow'],social:['Board Roach','Feed Herring','Chat Sprat'],tools:['Spanner Tench','Paste Gudgeon','Regex Ray'],dao:['Council Cod','Vote Sardine'],nft:['Mint Koi','Gallery Guppy'],validators:['Valoper Trout','Stake Pike','Consensus Carp'],infra:['Registry Eel','Faucet Flounder']};
 const FISH_ANY=['Gnomefish','Block Bass','Realm Roach','Atom Anchovy'];
 let fishing=null,fishLog=[],fishText='',fishUntil=0;
 // Saved under realm-ordnance-*; older gno-ordnance-* values are copied across once so catches survive.
@@ -1635,7 +1647,7 @@ function fishFrame(dt,t){
 $('#fish').onclick=fishAction;
 {const fb=$('#fish');fb.addEventListener('pointerdown',()=>{fishHeld=true});['pointerup','pointerleave','pointercancel'].forEach(n=>fb.addEventListener(n,()=>{fishHeld=false}))}
 function drawDeck(dt,t){
- if(deck.dirty)rebuildDeck();
+ if(deck.dirty&&(!firstActivity||!deck.world))rebuildDeck();
  const {camera,boat,water,farWater,sky,ripples}=deck;
  const sw=swellAt(B.x,B.y,t/1000),lift=sw.h*.9;
  if(P.boat)P.swim=false;
@@ -1662,7 +1674,7 @@ function drawDeck(dt,t){
   camY=Math.max(camY+deck.up,gm+.55);
  }
  const under=camY<wl-.02,fg=deck.scene.fog;
- fg.color.set(under?0x2f6f80:0xc4d8d6);fg.density=under?.03:.00115;deck.scene.background.set(under?0x2f6f80:0xc4d8d6);sky.visible=!under;
+ fg.color.set(under?0x2f6f80:0xc4d8d6);fg.density=under?.03:.00055;deck.scene.background.set(under?0x2f6f80:0xc4d8d6);sky.visible=!under;
  camera.position.set(P.x,camY,P.y);
  camera.lookAt(P.x+Math.cos(P.hd),camY+Math.tan(deck.pitch),P.y+Math.sin(P.hd));
  boat.position.set(B.x,lift,B.y);boat.rotation.order='YXZ';boat.rotation.y=-B.hd;
@@ -1674,8 +1686,12 @@ function drawDeck(dt,t){
  for(const mesh of deck.world.children){
   const coast=mesh.userData.grassCoast;
   if(coast)mesh.visible=Math.hypot(coast.lx-P.x,coast.ly-P.y)<coast.s*1.25+112;
+  const flora=mesh.userData.floraCoast;
+  if(flora)mesh.visible=Math.hypot(flora.lx-P.x,flora.ly-P.y)<flora.s*1.25+112;
+  const realm=mesh.userData.realm;
+  if(realm&&!realm.genesis)mesh.visible=Math.hypot(realm.lx-P.x,realm.ly-P.y)<260||realm.path===selectedPath;
   const isle=mesh.userData.isle;
-  if(isle)mesh.position.y=mesh.userData.baseY-riseDepth*(1-riseLevel(isle,t));
+  if(isle)mesh.position.y=(mesh.userData.baseY??0)-riseDepth*(1-riseLevel(isle,t));
  }
  if(ISL.length)for(const g of deck.gulls){g.c=ISL[g.i%ISL.length].ps[0];
   const a=g.a0+t/1000*g.sp,x=g.c.lx+Math.cos(a)*g.r,z=g.c.ly+Math.sin(a)*g.r;
@@ -1741,7 +1757,7 @@ function pickChartRealm(clientX,clientY){
 
 /* ---------- drawing ---------- */
 function draw(t){ctx.setTransform(DPR,0,0,DPR,0,0);ctx.fillStyle=SEA;ctx.fillRect(0,0,cw,ch);
- const cx=chartOverview?WW/2:P.x,cy=chartOverview?WH/2:P.y;ctx.setTransform(DPR*k,0,0,DPR*k,DPR*(cw/2-cx*k),DPR*(ch/2-cy*k));ctx.drawImage(WC,0,0);
+ const cx=chartOverview?WW/2:P.x,cy=chartOverview?WH/2:P.y;ctx.setTransform(DPR*k,0,0,DPR*k,DPR*(cw/2-cx*k),DPR*(ch/2-cy*k));ctx.drawImage(WC,0,0,WW,WH);
   coverRising(ctx,t);
   const u=1/k;ctx.textAlign='center';ctx.lineJoin='round';
   ISL.forEach(I=>{if(riseLevel(I,t)<.5)return;const coast=I.ps[0],x=coast.lx,y=coast.ly-coast.s*1.31;
@@ -1760,7 +1776,7 @@ function draw(t){ctx.setTransform(DPR,0,0,DPR,0,0);ctx.fillStyle=SEA;ctx.fillRec
    }else if(p.offshore){
    ctx.fillStyle=picked?'#a74026':'#396777';ctx.strokeStyle='#fff8e6';ctx.lineWidth=u;
    ctx.beginPath();ctx.moveTo(p.lx,p.ly-size*1.4);ctx.lineTo(p.lx+size,p.ly);ctx.lineTo(p.lx,p.ly+size*1.4);ctx.lineTo(p.lx-size,p.ly);ctx.closePath();ctx.fill();ctx.stroke();
-  }else if(p.txs==null||p.older){
+  }else if(liveStats(p).txs==null||p.older){
    ctx.strokeStyle='#654330';ctx.lineWidth=u;ctx.setLineDash([2*u,2*u]);ctx.beginPath();ctx.arc(p.lx,p.ly,size,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
   }else{
    for(const [dx,dy] of offsets){
@@ -1776,10 +1792,10 @@ function draw(t){ctx.setTransform(DPR,0,0,DPR,0,0);ctx.fillStyle=SEA;ctx.fillRec
    }
   }
   const distance=Math.hypot(P.x-p.lx,P.y-p.ly);
-  if(picked||p.txs>0||p.offshore||distance<28)nearbyLabels.push({p,size,distance,picked});
+  if(picked||liveStats(p).txs>0||p.offshore||distance<28)nearbyLabels.push({p,size,distance,picked});
  });
  const used=[];
- nearbyLabels.sort((a,b)=>Number(b.picked)-Number(a.picked)||(b.p.txs??0)-(a.p.txs??0)||a.distance-b.distance);
+ nearbyLabels.sort((a,b)=>Number(b.picked)-Number(a.picked)||(liveStats(b.p).txs??0)-(liveStats(a.p).txs??0)||a.distance-b.distance);
  for(const {p,size} of nearbyLabels){
   const x=p.lx,y=p.ly-size-4*u;
   ctx.font=11*u+'px Georgia';
@@ -1800,7 +1816,7 @@ function draw(t){ctx.setTransform(DPR,0,0,DPR,0,0);ctx.fillStyle=SEA;ctx.fillRec
  ctx.fillStyle='#7a4f2a';ctx.strokeStyle='#3b2f22';ctx.lineWidth=1.2;ctx.beginPath();ctx.ellipse(0,0,14,6,0,0,6.283);ctx.fill();ctx.stroke();
  ctx.fillStyle='#fff8e6';ctx.beginPath();ctx.moveTo(-2,-1);ctx.lineTo(-2,-12);ctx.lineTo(9,-1);ctx.fill();ctx.stroke();ctx.restore();
  ctx.fillStyle='#b5532a';ctx.strokeStyle='#fff8e6';ctx.lineWidth=2*bs;ctx.beginPath();ctx.arc(P.x,P.y,5*bs*.8,0,6.283);ctx.fill();ctx.stroke()}
-let lt=0;function frame(t){const dt=Math.min(.05,(t-lt)/1000||0);lt=t;if(WC){applyPendingChart();step(dt);ui();if(deck.active)drawDeck(dt,t);else draw(t);drawMinimap(t)}requestAnimationFrame(frame)}
+let lt=0;function frame(t){const dt=Math.min(.05,(t-lt)/1000||0);lt=t;if(WC){applyPendingChart();if(pendingBake){bake();pendingBake=false;}step(dt);ui();if(deck.active)drawDeck(dt,t);else draw(t);drawMinimap(t)}requestAnimationFrame(frame)}
 function resize(){cw=wrap.clientWidth;ch=wrap.clientHeight;cv.width=cw*DPR;cv.height=ch*DPR;if(chartOverview&&WW&&WH)k=Math.min(cw/WW,ch/WH)*.94;sizeDeck()}
 addEventListener('resize',resize);
 $('#zi').onclick=()=>{chartOverview=false;k=Math.min(2.5,k*1.3);};
@@ -1874,9 +1890,11 @@ async function loadGenesis(target){
 }
 async function genesisFor(token){
  const target=network,g=await loadGenesis(target);
- if(token!==generation||g.state!=='ok'||activeMode!=='loading')return;
- // Before the activity scan returns, only the genesis island stands in the sea.
- go([],[],target.name+' · genesis block · reading live activity…',true,true,[],{centre:{x:0,y:0},net:target.id});
+ if(token!==generation||g.state!=='ok')return;
+ if(ISL.some(I=>!I.genesis))return;
+ if(activeMode!=='loading'&&activeMode!==target.id)return;
+ // Before the catalogue returns, only the genesis island stands in the sea.
+ go([],[],target.name+' · genesis block · reading the realm catalogue…',true,true,[],{centre:{x:0,y:0},net:target.id});
 }
 function emptySea(){
  const size=1400;
@@ -1897,7 +1915,7 @@ function drawMinimap(t){
  if(mini.width!==Math.round(w*DPR)||mini.height!==Math.round(h*DPR)){mini.width=Math.round(w*DPR);mini.height=Math.round(h*DPR);}
  const c=miniCtx;c.setTransform(DPR,0,0,DPR,0,0);c.fillStyle=SEA;c.fillRect(0,0,w,h);
  const s=Math.min((w-8)/WW,(h-8)/WH),ox=(w-WW*s)/2,oy=(h-WH*s)/2;
- c.save();c.translate(ox,oy);c.scale(s,s);c.drawImage(WC,0,0);coverRising(c,t);c.restore();
+ c.save();c.translate(ox,oy);c.scale(s,s);c.drawImage(WC,0,0,WW,WH);coverRising(c,t);c.restore();
  c.textAlign='center';c.lineJoin='round';
  for(const I of ISL){
   if(riseLevel(I,t)<.5)continue;
@@ -1972,12 +1990,17 @@ $('#bOnyx').onclick=async()=>{
  finally{button.disabled=false}
 };
 const categoryRules=[
-  ['games',/(?:^|[^a-z])(?:games?|arena|akkadia|chess|mahjong|2048|tictactoe|sudoku|rpg|gnogame|gnometavern|gamehub|arcade|quests?)(?:[^a-z]|$)/i],
-  ['defi',/(?:^|[^a-z])(?:defi|gnoswap|swaps?|dex|staking|staker|lending|liquidity|vaults?|amm|dca)(?:[^a-z]|$)/i],
-  ['social',/(?:^|[^a-z])(?:social|forums?|guestbook|blogs?|chat|community|boards?|profiles?)(?:[^a-z]|$)/i],
-  ['tools',/(?:^|[^a-z])(?:tools?|indexer|explorer|gnopulse|ordnance|registry|monitor|faucet)(?:[^a-z]|$)/i]
+  ['validators',/(?:^|[^a-z]|\/)(?:validators?|valopers?)(?:[^a-z]|$)/i],
+  ['games',/(?:^|[^a-z])(?:games?|arena|akkadia|chess|mahjong|2048|tictactoe|sudoku|rpg|gnogame|gnometavern|gamehub|arcade|quests?|tavern2048|tavernbets|tavernwagers|connect4|bullscows|kingofdice|coinflip|duel|raffle|hangman|blackjack|poker|lottery|puzzle|eightball|closestguess|eggling|collatz)(?:[^a-z]|$)/i],
+  ['nft',/(?:^|[^a-z])(?:nfts?|grc721|erc721|gnoplates|gallery|collectibles?|merkledrop|nsnft|badges?)(?:[^a-z]|$)/i],
+  ['dao',/(?:^|[^a-z]|\/)(?:daos?|govdao|governance|treasury|grants?|votes?|voting|polls?|qvote|council|guild|proposal|bounty|governor)(?:[^a-z]|$)/i],
+  ['defi',/(?:^|[^a-z])(?:defi|gnoswap|swaps?|dex|staking|staker|lending|liquidity|vaults?|amm|dca|perps?|escrow|vesting|crowdfund|stable|tusd|usdc|auction|orderbook|wugnot|ugnot|markets?)(?:[^a-z]|$)/i],
+  ['social',/(?:^|[^a-z])(?:social|forums?|guestbook|blogs?|chat|community|boards?|profiles?|microblog|posts?|follow|feeds?|reactions?|tavernboard|taproom|barkeep|linktree|dm)(?:[^a-z]|$)/i],
+  ['tools',/(?:^|[^a-z])(?:tools?|indexer|explorer|gnopulse|ordnance|registry|monitor|faucet|access|bench|namereg|lamplighter|shortener)(?:[^a-z]|$)/i]
 ];
 const unknownDistrict='uncategorised';
+const liveCategories=['defi','games','social','dao','tools','nft','validators','uncategorised'];
+const gamesLeaf=/^(?:game|arena|akkadia|chess|mahjong|2048|tictactoe|sudoku|rpg|gnogame|gnometavern|tavern2048|gamehub|arcade|quest|connect4|bullscows|kingofdice|coinflipduel|duel|raffle|eightball|closestguess|eggling)$/;
 const packagePath=/^gno\.land\/r\/[a-zA-Z0-9_-]+(?:\/[a-zA-Z0-9_-]+)+$/;
 function unversioned(segment){
   return segment.replace(/(?:[_-]v\d+(?:[_-]\d+)*)$/i,'');
@@ -2000,7 +2023,7 @@ function pathCategory(path){
   const category=categoryRules.find(([,rule])=>rule.test(name))?.[0]??unknownDistrict;
   if(category!=='games')return category;
   if(/(?:^|[_-])(?:leaderboard|attestation|oracle|relay|registry|view|sdk|logic|helper|api|test|demo)(?:$|[_-])/i.test(project))return 'tools';
-  return /^(?:game|arena|akkadia|chess|mahjong|2048|tictactoe|sudoku|rpg|gnogame|gnometavern|tavern2048|gamehub|arcade|quest)$/.test(project)?'games':unknownDistrict;
+  return gamesLeaf.test(project)?'games':unknownDistrict;
 }
 const decoder=new TextDecoder();
 function protobufFields(data){
@@ -2054,8 +2077,12 @@ async function eachLimited(items,limit,run){
 const pollInterval=15000;
 let windowSize=5000;
 let following=false, generation=0, timer, request, history, directory=null;
-const scanCache={headers:new Map(),verified:new Map()};
+const scanCache={headers:new Map(),decoded:new Map(),verified:new Map()};
 let lastMapSignature='';
+let islandState={};
+let firstActivity=false;
+let pendingIslands=new Set();
+const verifyInflight=new Map();
 function renderSearch(){
  const output=$('#search-results'), q=$('#search').value.trim().toLowerCase();
  output.replaceChildren();
@@ -2077,7 +2104,106 @@ async function catalogue(signal){
  if(paths.length>=10000||!paths.every(path=>packagePath.test(path)))throw new Error('Incomplete realm catalogue.');
  return paths;
 }
-async function scanRange(start,end,cache,signal,progress){
+function readCatalogueCache(){
+ try{
+  const data=JSON.parse(storeGet('catalogue-'+network.id)||'null');
+  if(!data?.paths?.length||!data.paths.every(path=>packagePath.test(path)))return null;
+  return data;
+ }catch{return null}
+}
+function writeCatalogueCache(paths){
+ try{localStorage.setItem('realm-ordnance-catalogue-'+network.id,JSON.stringify({paths,loaded:Date.now()}))}catch{}
+}
+function statusLine(){
+ if(!following)return;
+ const names=liveCategories.filter(n=>islandState[n]&&islandState[n].state!=='skipped');
+ const parts=names.map(n=>{
+  const s=islandState[n];
+  if(s.state==='checked')return n+' checked';
+  if(s.state==='error')return n+' retrying';
+  if(s.total)return n+' '+s.done.toLocaleString()+'/'+s.total.toLocaleString();
+  return n+' waiting';
+ });
+ const planted=catalogueRows.length||directory?.paths.length||0;
+ const head=planted?network.name+' · '+planted.toLocaleString()+' deployed realms':'Loading '+network.name;
+ const phase=names.length&&names.every(n=>islandState[n].state==='checked')
+  ?'Live · checked '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'})
+  :(parts.length?('Checking activity · '+parts.join(' · ')):($('#live-state').textContent||'Loading live chain data…'));
+ if(names.length&&names.every(n=>islandState[n].state==='checked'))$('#live-state').textContent=phase;
+ else if(parts.length)$('#live-state').textContent=head+' · '+phase.replace(/^Checking activity · /,'checking ');
+}
+function layoutDistricts(counts){
+ const names=liveCategories.filter(n=>n==='games'||(counts[n]||0)>0);
+ const items=names.map(n=>{
+  const count=counts[n]||0;
+  return {n,count,radius:58+17*Math.sqrt(count)};
+ });
+ const genesisClear=22*2.2+60, gap=180;
+ let D=0;
+ for(const it of items)D=Math.max(D,genesisClear+it.radius+gap);
+ const n=items.length;
+ if(n>=2){
+  for(let i=0;i<n;i++){
+   const a=items[i],b=items[(i+1)%n];
+   D=Math.max(D,(a.radius+b.radius+gap)/(2*Math.sin(Math.PI/n)));
+  }
+ }
+ return items.map((it,i)=>{
+  const angle=-Math.PI/2+i*2*Math.PI/Math.max(n,1);
+  return {n:it.n,x:Math.cos(angle)*D,y:Math.sin(angle)*D,radius:it.radius};
+ });
+}
+function plotRecords(paths,activity,checked){
+ const all=[...new Set(paths)].map(path=>{
+  const cat=pathCategory(path),m=activity?.get(path);
+  const ready=!!checked?.has(cat);
+  return {path,cat,name:displayName(path),live:true,
+   txs:ready?(m?.txs??0):null,
+   callers:ready?(m?.callers??0):null,
+   activeBlocks:ready?(m?.blocks.size??m?.activeBlocks??0):null};
+ });
+ const counts={};
+ for(const p of all)counts[p.cat]=(counts[p.cat]||0)+1;
+ const districts=layoutDistricts(counts);
+ const charted=[];
+ for(const d of districts){
+  const plots=all.filter(p=>p.cat===d.n).map(p=>({...p}));
+  for(const p of plots)p.offshore=p.txs>0&&hash(p.path)%4===0;
+  charted.push(...plots);
+ }
+ return {all,districts,charted};
+}
+function activityFrom(window){
+ const recent=new Map();
+ if(!window)return recent;
+ for(const [height,calls] of window.records){
+  if(height<window.start||height>window.end)continue;
+  for(const call of calls){
+   if(!recent.has(call.path))recent.set(call.path,{txs:0,callers:new Set(),blocks:new Set(),last:0});
+   const realm=recent.get(call.path);
+   realm.txs++;realm.blocks.add(height);realm.last=Math.max(realm.last,height);
+   for(const address of call.callers)realm.callers.add(address);
+  }
+ }
+ for(const realm of recent.values()){realm.callers=realm.callers.size;realm.activeBlocks=realm.blocks.size;}
+ return recent;
+}
+function checkedCategories(){
+ return new Set(Object.entries(islandState).filter(([,s])=>s.state==='checked').map(([n])=>n));
+}
+function mapTitle(paths,activity){
+ const ready=checkedCategories();
+ const data=plotRecords(paths,activityFrom(activity),ready);
+ const active=data.charted.filter(p=>p.txs>0).length;
+ const planted=data.all.length;
+ const range=activity?' · blocks '+activity.start.toLocaleString()+'–'+activity.end.toLocaleString():'';
+ const readyCount=ready.size;
+ const pending=liveCategories.filter(n=>islandState[n]&&islandState[n].state!=='skipped'&&islandState[n].state!=='checked').length;
+ const use=readyCount?active+' of '+planted+' with verified activity'+range:planted+' deployed realms';
+ return network.name+' · '+use+(pending?' · checking '+(pending)+' '+(pending===1?'island':'islands'):'');
+}
+
+async function scanHeaders(start,end,cache,signal,progress){
  const chain=network.id;
  const chunks=[];
  let checked=0;
@@ -2101,192 +2227,320 @@ async function scanRange(start,end,cache,signal,progress){
   checked+=maxHeight-minHeight+1;
   progress('Scanning blocks',checked,blockCount);
  });
+}
+function occupiedHeights(start,end,cache){
  const occupied=[];
- let total=0,verified=0;
  for(let height=start;height<=end;height++){
   const count=cache.headers.get(height);
-  if(!count)continue;
-  total++;
-  if(cache.verified.has(height))verified++;
-  else occupied.push({height,count});
+  if(count)occupied.push({height,count});
  }
- if(total)progress('Verifying receipts',verified,total);
- await eachLimited(occupied,5,async({height,count})=>{
-  const [block,receipts]=await Promise.all([rpcResult('block',{height},signal),rpcResult('block_results',{height},signal)]);
+ return occupied;
+}
+async function decodeOccupied(occupied,cache,signal,progress){
+ let done=occupied.filter(o=>cache.decoded.has(o.height)).length;
+ const pending=occupied.filter(o=>!cache.decoded.has(o.height));
+ if(occupied.length)progress('Reading transactions',done,occupied.length);
+ await eachLimited(pending,5,async({height,count})=>{
+  const block=await rpcResult('block',{height},signal);
   signal.throwIfAborted();
-  const txs=block.block?.data?.txs,results=receipts.results?.deliver_tx;
-  if(Number(block.block?.header?.height)!==height||block.block.header.chain_id!==chain||
-     Number(receipts.height)!==height||txs?.length!==count||results?.length!==count)throw new Error('Mismatched transaction receipts.');
+  const txs=block.block?.data?.txs;
+  if(Number(block.block?.header?.height)!==height||block.block.header.chain_id!==network.id||txs?.length!==count)
+   throw new Error('Mismatched block transactions.');
   const calls=[];
   txs.forEach((tx,i)=>{
-   const receipt=results[i].ResponseBase??results[i];
-   if(receipt.Error!=null||receipt.Code>0||/success:false/.test(receipt.Log??''))return;
-   for(const [path,callers] of calledRealms(tx))calls.push({path,callers});
+   for(const [path,callers] of calledRealms(tx))calls.push({index:i,path,callers});
   });
-  cache.verified.set(height,calls);
-  progress('Verifying receipts',++verified,total);
+  cache.decoded.set(height,{count,calls});
+  progress('Reading transactions',++done,occupied.length);
  });
+}
+async function verifyHeight(height,cache,signal){
+ if(cache.verified.has(height))return cache.verified.get(height);
+ if(verifyInflight.has(height))return verifyInflight.get(height);
+ const work=(async()=>{
+  const decoded=cache.decoded.get(height);
+  if(!decoded)throw new Error('Missing decoded transactions for block '+height+'.');
+  const receipts=await rpcResult('block_results',{height},signal);
+  signal.throwIfAborted();
+  const results=receipts.results?.deliver_tx;
+  if(Number(receipts.height)!==height||results?.length!==decoded.count)throw new Error('Mismatched transaction receipts.');
+  const calls=[];
+  for(const call of decoded.calls){
+   const receipt=results[call.index].ResponseBase??results[call.index];
+   if(receipt.Error!=null||receipt.Code>0||/success:false/.test(receipt.Log??''))continue;
+   calls.push({path:call.path,callers:call.callers});
+  }
+  cache.verified.set(height,calls);
+  return calls;
+ })();
+ verifyInflight.set(height,work);
+ try{return await work;}finally{verifyInflight.delete(height);}
 }
 function addVerified(records,cache,start,end){
  for(const [height,calls] of cache.verified){
   if(calls.length&&height>=start&&height<=end)records.set(height,calls);
  }
 }
-async function recentBlocks(previous,signal,progress,cache={headers:new Map(),verified:new Map()}){
+async function prepareWindow(previous,signal,progress,cache){
  const status=await rpcResult('status',{},signal),end=Number(status.sync_info?.latest_block_height);
  signal.throwIfAborted();
  if(status.node_info?.network!==network.id||!Number.isSafeInteger(end)||end<1)throw new Error('Could not verify the chain tip.');
  if(previous&&end<previous.end)throw new Error('The RPC returned an older chain tip.');
- const start=Math.max(1,end-windowSize+1),oldest=Math.max(1,start-5000),since=Math.max(start,(previous?.end??0)+1);
+ const start=Math.max(1,end-windowSize+1);
+ const oldest=start;
  const records=new Map(previous?[...previous.records].filter(([height])=>height>=start):[]);
- for(const bucket of [cache.headers,cache.verified])for(const height of bucket.keys()){
-  if(height<oldest||height>end)bucket.delete(height);
+ for(const bucket of [cache.headers,cache.decoded,cache.verified])for(const height of bucket.keys()){
+  if(height<start||height>end)bucket.delete(height);
  }
- await scanRange(since,end,cache,signal,progress);
+ const since=Math.max(start,(previous?.end??0)+1);
+ await scanHeaders(since,end,cache,signal,progress);
+ // A later, shorter window still needs headers already in cache; a first pass fills the whole range.
+ if(since>start)await scanHeaders(start,Math.min(end,since-1),cache,signal,progress);
+ const occupied=occupiedHeights(start,end,cache);
+ await decodeOccupied(occupied,cache,signal,progress);
  addVerified(records,cache,start,end);
- return {start,end,oldest,records};
+ return {start,end,oldest,records,occupied};
 }
-function needsOlder(activity){
- const categories=new Map();
- for(const calls of activity.records.values())for(const {path} of calls){
-  const category=pathCategory(path);
-  if(!categories.has(category))categories.set(category,new Set());
-  categories.get(category).add(path);
+function heightsForCategory(category,start,end,paths,cache){
+ const wanted=new Set(paths);
+ const heights=[];
+ for(let height=start;height<=end;height++){
+  const decoded=cache.decoded.get(height);
+  if(!decoded)continue;
+  if(decoded.calls.some(call=>wanted.has(call.path)||pathCategory(call.path)===category))heights.push(height);
  }
- return [...categories.values()].some(paths=>paths.size<3)&&activity.oldest<activity.start;
+ return heights;
 }
-
-const liveCategories=['defi','games','social','tools','uncategorised'];
-function mapRecords(paths,window){
- const recent=new Map(), older=new Map();
- for(const [height,calls] of window.records)for(const call of calls){
-  const table=height>=window.start?recent:older;
-  if(!table.has(call.path))table.set(call.path,{txs:0,callers:new Set(),blocks:new Set(),last:0});
-  const realm=table.get(call.path);
-  realm.txs++;realm.blocks.add(height);realm.last=Math.max(realm.last,height);
-  for(const address of call.callers)realm.callers.add(address);
- }
- const all=[...new Set([...paths,...recent.keys(),...older.keys()])].map(path=>{
-  const cat=pathCategory(path),m=recent.get(path);
-  return {path,cat,name:displayName(path),live:true,txs:m?.txs??0,
-   callers:m?.callers.size??0,activeBlocks:m?.blocks.size??0,olderBlock:older.get(path)?.last};
- });
- const charted=[],districts=[];
- const locations=[[-385,-340],[375,-315],[-425,370],[385,360],[0,1000]];
- for(const [i,n] of liveCategories.entries()){
-  const active=all.filter(p=>p.cat===n&&p.txs>0).sort((a,b)=>b.txs-a.txs||a.path.localeCompare(b.path));
-  // Keep Games navigable even when no Games realm was called in this window.
-  // The jetty and tackle shop are part of the archipelago, not a fake realm.
-  if(!active.length&&n!=='games')continue;
-  const extras=active.length<3?all.filter(p=>p.cat===n&&!p.txs&&p.olderBlock)
-   .sort((a,b)=>b.olderBlock-a.olderBlock||a.path.localeCompare(b.path)).slice(0,2)
-   .map(p=>({...p,older:true})): [];
-  const plots=[...active,...extras].map(p=>({...p}));
-  for(const p of plots)p.offshore=hash(p.path)%4===0;
-  const [x,y]=locations[i];
-  districts.push({n,x,y,radius:58+17*Math.sqrt(plots.length)});
-  charted.push(...plots);
- }
- return {all,districts,charted};
-}
-let pendingMap=null;
-const pendingChartNote=' · terrain update at a jetty';
-function readyForChart(districts){
- if(activeMode==='loading')return true;
+function readyForIsland(I){
+ if(activeMode==='loading'||firstActivity)return true;
  if(P.boat||P.swim||drag||ptr||walkKeys.some(key=>keys[key]))return false;
  const dock=jettyAt(P.x,P.y);
- if(!dock)return false;
- return activeMode!==network.id||districts.some(d=>d.n===dock.I.n);
+ const [,standing]=hF(P.x,P.y);
+ if(standing===I&&!dock)return false;
+ return true;
+}
+function placeOffshoreFor(island){
+ const placed=PK.filter(({p,I})=>p.offshore&&(!island||I!==island)).map(({p})=>({x:p.lx,y:p.ly}));
+ for(const {p,I} of PK){
+  if((island&&I!==island)||!p.offshore)continue;
+  const j=I.jt,coast=I.ps[0],base=Math.atan2(j.dy,j.dx),sign=hash(p.path)%2?1:-1;
+  let point;
+  for(let i=0;i<30&&!point;i++){
+   const angle=base+sign*(.55+(i%10)*.48);
+   const radius=coast.s*1.43+24+Math.floor(i/10)*24;
+   const q={x:coast.x+Math.cos(angle)*radius,y:coast.y+Math.sin(angle)*radius};
+   if(waterOK(q.x,q.y)&&JT.every(d=>gap(q,berth(d))>44)&&placed.every(d=>gap(q,d)>36))point=q;
+  }
+  if(point){p.x=p.lx=point.x;p.y=p.ly=point.y;placed.push(point);}
+  else{
+   p.offshore=false;
+   p.lx=p.x=j.x0-j.dx*18;p.ly=p.y=j.y0-j.dy*18;
+  }
+ }
+}
+function restyleIsland(name,rows){
+ const I=ISL.find(i=>i.n===name&&!i.genesis);
+ if(!I)return;
+ const coast=I.ps[0];
+ const records=rows.filter(r=>r.cat===name&&!r.genesis);
+ const landSize=coast.s;
+ const ps=placeRealms(records,{n:name,x:coast.x,y:coast.y},landSize);
+ I.ps=[coast,...ps];
+ I.open=!I.genesis&&records.length<=2;
+ I.empty=!records.length;
+ I.seed=hash(name);
+ mk(I);
+ PK=PK.filter(o=>o.I!==I);
+ I.ps.forEach(p=>{if(!p.ghost)PK.push({p,I})});
+ JT=JT.filter(j=>j.I!==I);
+ placeJetty(I);
+ placeOffshoreFor(I);
+ pendingBake=true;
+ if(!firstActivity)deck.dirty=true;
+}
+let pendingBake=false;
+function applyIslandData(name,paths,activity){
+ const ready=checkedCategories();
+ ready.add(name);
+ const data=plotRecords(paths,activityFrom(activity),ready);
+ for(const row of data.all){
+  const existing=catalogueRows.find(r=>r.path===row.path);
+  if(existing)Object.assign(existing,row);
+ }
+ catalogueRows=data.all;
+ for(const {p} of PK){
+  const row=data.charted.find(r=>r.path===p.path);
+  if(row)p.liveReading={txs:row.txs,callers:row.callers,activeBlocks:row.activeBlocks};
+ }
+ $('#src').textContent=mapTitle(paths,activity)+(pendingIslands.size?' · terrain update at a jetty':'');
+ if($('#search').value)renderSearch();
+ const I=ISL.find(i=>i.n===name&&!i.genesis);
+ if(!I)return;
+ if(!readyForIsland(I)){pendingIslands.add(name);return;}
+ pendingIslands.delete(name);
+ restyleIsland(name,data.charted);
+ const note=pendingChartNote;
+ const source=$('#src');
+ if(source.textContent?.endsWith(note))source.textContent=source.textContent.slice(0,-note.length);
 }
 function applyPendingChart(){
- if(!pendingMap||!readyForChart(pendingMap.districts))return;
- const {paths,activity}=pendingMap;
- paintLive(paths,activity);
+ if(!pendingIslands.size||!directory)return;
+ const ready=[...pendingIslands].filter(name=>{
+  const I=ISL.find(i=>i.n===name&&!i.genesis);
+  return I&&readyForIsland(I);
+ });
+ if(!ready.length)return;
+ const data=plotRecords(directory.paths,activityFrom(history),checkedCategories());
+ for(const name of ready){pendingIslands.delete(name);restyleIsland(name,data.charted);}
+ const source=$('#src');
+ if(!pendingIslands.size&&source.textContent?.endsWith(pendingChartNote))source.textContent=source.textContent.slice(0,-pendingChartNote.length);
 }
-function paintLive(paths,activity){
- const data=mapRecords(paths,activity);
- const recentCount=data.charted.filter(p=>p.txs>0).length;
- const range=' · blocks '+activity.start.toLocaleString()+'–'+activity.end.toLocaleString();
- const title=network.name+' · '+recentCount+' active realms'+range;
- const catalogue=new Map(data.all.map(row=>[row.path,row]));
- if(activeMode===network.id)for(const {p} of PK){
-  p.liveReading=catalogue.get(p.path)??{txs:0,callers:0,activeBlocks:0};
- }
- const districts=data.districts.length?data.districts:[{n:'Harbour',x:0,y:0,radius:75}];
- const signature=JSON.stringify([network.id,data.charted.map(p=>[p.path,p.txs,p.callers,p.activeBlocks,p.olderBlock])]);
- if(signature!==lastMapSignature){
-   const keep=activeMode===network.id||activeMode==='loading';
-if(!readyForChart(districts)){
-   pendingMap={paths,activity,districts};
-   catalogueRows=data.all;
-   $('#src').textContent=title+pendingChartNote;
-   if($('#search').value)renderSearch();
-   return;
-  }
-  pendingMap=null;
-  liveWeb=network.web;
-   go(data.charted,districts,title,true,keep,data.all,{centre:{x:0,y:0},net:network.id});
-  activeMode=network.id;lastMapSignature=signature;
- }else{
-  pendingMap=null;
-  catalogueRows=data.all;$('#src').textContent=title;
+function plantCatalogue(paths,keepPosition=true){
+ const data=plotRecords(paths,activityFrom(history),checkedCategories());
+ const title=mapTitle(paths,history);
+ const signature=JSON.stringify([network.id,'plant',data.districts.map(d=>[d.n,d.radius,d.x,d.y]),data.charted.map(p=>p.path)]);
+ if(signature===lastMapSignature&&activeMode===network.id){
+  catalogueRows=data.all;
   if($('#search').value)renderSearch();
+  $('#src').textContent=title;
+  return;
  }
+ pendingIslands.clear();
+ liveWeb=network.web;
+ go(data.charted,data.districts,title,true,keepPosition,data.all,{centre:{x:0,y:0},net:network.id});
+ lastMapSignature=signature;
 }
+
+let pendingMap=null;
+const pendingChartNote=' · terrain update at a jetty';
 
 function stopLive(){
  following=false;generation++;clearTimeout(timer);request?.abort();request=null;
- pendingMap=null;
+ pendingIslands.clear();
+ verifyInflight.clear();
  const source=$('#src');
  if(source.textContent?.endsWith(pendingChartNote))source.textContent=source.textContent.slice(0,-pendingChartNote.length);
  $('#live').textContent='Resume live';
 }
-function startLive(){
+function startLive(resetMap=false){
+ const next=networks[$('#network').value]??networks.mainnet;
+ const switchMap=resetMap||next!==network||!ISL.some(I=>!I.genesis);
  stopLive();
- following=true;history=null;directory=null;pendingMap=null;lastMapSignature='';selectedPath='';inspectOpen=false;
- scanCache.headers.clear();scanCache.verified.clear();
- network=networks[$('#network').value]??networks.mainnet;
+ following=true;selectedPath='';inspectOpen=false;
+ network=next;
  windowSize=Number($('#blocks').value)||5000;
  $('#live').textContent='Pause live';
- if(activeMode==='loading')$('#live-state').textContent='Loading live chain data…';
- poll(generation);genesisFor(generation);
+ if(switchMap){
+  history=null;directory=null;lastMapSignature='';islandState={};pendingIslands.clear();
+  scanCache.headers.clear();scanCache.decoded.clear();scanCache.verified.clear();
+  emptySea();activeMode='loading';firstActivity=true;
+  $('#live-state').textContent='Loading live chain data…';
+  const cached=readCatalogueCache();
+  if(cached){
+   directory={paths:cached.paths,loaded:cached.loaded};
+   plantCatalogue(cached.paths,true);
+   $('#live-state').textContent=network.name+' · '+cached.paths.length.toLocaleString()+' deployed realms · refreshing catalogue…';
+  }
+  poll(generation);genesisFor(generation);
+ }else{
+  restartActivity();
+ }
+}
+function restartActivity(){
+ if(!following)return;
+ const token=generation;
+ windowSize=Number($('#blocks').value)||5000;
+ history=null;
+ scanCache.headers.clear();scanCache.decoded.clear();scanCache.verified.clear();
+ for(const n of Object.keys(islandState)){
+  if(islandState[n].state==='skipped')continue;
+  islandState[n]={state:'waiting',done:0,total:0};
+ }
+ pendingIslands.clear();
+ request?.abort();
+ clearTimeout(timer);
+ $('#live-state').textContent=network.name+' · rechecking activity in the new window…';
+ poll(token);
+}
+async function checkIslands(paths,window,cache,signal){
+ const present=new Set(paths.map(pathCategory));
+ for(const name of liveCategories){
+  if(name!=='games'&&!present.has(name)){islandState[name]={state:'skipped',done:0,total:0};continue;}
+  if(!islandState[name]||islandState[name].state==='skipped')islandState[name]={state:'waiting',done:0,total:0};
+ }
+ const jobs=liveCategories.filter(n=>islandState[n]&&islandState[n].state!=='skipped').map(name=>({name,heights:heightsForCategory(name,window.start,window.end,paths.filter(p=>pathCategory(p)===name),cache)}));
+ const remaining=new Set(jobs.map(job=>job.name));
+ function refresh(job){
+  const state=islandState[job.name];
+  state.total=job.heights.length;
+  state.done=job.heights.filter(height=>cache.verified.has(height)).length;
+  if(state.state!=='checked')state.state=state.total&&state.done<state.total?'checking':'waiting';
+ }
+ function applyReady(){
+  addVerified(window.records,cache,window.start,window.end);
+  for(const job of jobs){
+   if(!remaining.has(job.name))continue;
+   if(!job.heights.every(height=>cache.verified.has(height)))continue;
+   remaining.delete(job.name);
+   islandState[job.name].state='checked';
+   islandState[job.name].done=job.heights.length;
+   islandState[job.name].total=job.heights.length;
+   if(following)applyIslandData(job.name,paths,window);
+  }
+  statusLine();
+ }
+ for(const job of jobs)refresh(job);
+ applyReady(); // islands with no receipts in this window finish immediately
+ const queues=jobs.map(job=>({left:job.heights.filter(height=>!cache.verified.has(height))}));
+ const order=[];
+ while(queues.some(q=>q.left.length))for(const q of queues)if(q.left.length)order.push(q.left.shift());
+ await eachLimited(order,5,async height=>{
+  await verifyHeight(height,cache,signal);
+  for(const job of jobs)refresh(job);
+  applyReady();
+ });
+ if(remaining.size)applyReady();
+ if(remaining.size)throw new Error('Could not finish activity checks for '+[...remaining].join(', ')+'.');
+ if(firstActivity){firstActivity=false;activeMode=network.id;deck.dirty=true;}
 }
 async function poll(token){
  if(!following||token!==generation)return;
  const controller=new AbortController();request=controller;
- const deadline=setTimeout(()=>controller.abort(),130000);
+ const deadline=setTimeout(()=>controller.abort(),180000);
  const alive=()=>following&&token===generation;
+ const progress=(phase,done,total)=>{
+  if(alive())$('#live-state').textContent=phase+' '+network.name+' · '+done.toLocaleString()+'/'+total.toLocaleString();
+ };
  try{
-  const needsCatalogue=!directory||Date.now()-directory.loaded>120000;
-  const refreshDirectory=needsCatalogue?catalogue(controller.signal).then(paths=>{
+  if(!directory||Date.now()-directory.loaded>120000){
+   if(alive()&&!directory)$('#live-state').textContent='Reading the realm catalogue on '+network.name+'…';
+   const paths=await catalogue(controller.signal);
    if(!alive())return;
    directory={paths,loaded:Date.now()};
-   if(history)paintLive(paths,history);
-  }).catch(()=>{}):Promise.resolve();
-  const statusLabel=(phase,done,total)=>{
-   if(alive())$('#live-state').textContent=phase+' '+network.name+' · '+done.toLocaleString()+'/'+total.toLocaleString();
-  };
-  const activity=await recentBlocks(history,controller.signal,statusLabel,scanCache);
+   writeCatalogueCache(paths);
+   plantCatalogue(paths,true);
+   statusLine();
+  }else if(ISL.every(I=>I.genesis)&&directory.paths.length){
+   plantCatalogue(directory.paths,true);
+  }
+  const activity=await prepareWindow(history,controller.signal,progress,scanCache);
   if(!alive())return;
   if(genesisInfo[network.id]?.state==='unavailable'){delete genesisInfo[network.id];loadGenesis(network);}
   history=activity;
-  const useActivity=()=>paintLive(directory?.paths??[],activity);
-  const checked=()=>{if(alive())$('#live-state').textContent='Live · checked '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});};
-  const lookBack=needsOlder(activity);
-  if(lookBack)addVerified(activity.records,scanCache,activity.oldest,activity.start-1);
-  useActivity();checked();
-  if(lookBack){
-   await scanRange(activity.oldest,activity.start-1,scanCache,controller.signal,
-    (phase,done,total)=>statusLabel(phase==='Scanning blocks'?'Looking back · blocks':'Looking back · receipts',done,total));
-   if(!alive())return;
-   addVerified(activity.records,scanCache,activity.oldest,activity.start-1);
-   useActivity();checked();
+  const extra=[...activity.records.values()].flatMap(calls=>calls.map(c=>c.path));
+  const planted=[...new Set([...(directory?.paths??[]),...extra])];
+  if(directory&&planted.length!==directory.paths.length){
+   directory.paths=planted;
+   plantCatalogue(planted,true);
   }
-  await refreshDirectory;
+  await checkIslands(directory?.paths??planted,activity,scanCache,controller.signal);
+  if(!alive())return;
+  statusLine();
  }catch(error){
   if(alive()){
     const reason=error.name==='AbortError'?'Scan timed out':error.message;
-    $('#live-state').textContent=activeMode==='loading'?'Could not load live chain data · '+reason+' · retrying':(history?'Last verified map · ':'')+reason+' · retrying';
+    const planted=ISL.some(I=>!I.genesis);
+    $('#live-state').textContent=(!planted&&activeMode==='loading'?'Could not load live chain data · ':'')+(planted?'Last verified map · ':'')+reason+' · retrying';
     if(activeMode==='loading'&&genesisInfo[network.id]?.state==='unavailable'){delete genesisInfo[network.id];genesisFor(generation);}
   }
  }finally{
@@ -2298,8 +2552,8 @@ $('#live').addEventListener('click',()=>{
  if(following){stopLive();$('#live-state').textContent='Live updates paused';}
  else startLive();
 });
-$('#network').addEventListener('change',startLive);
-$('#blocks').addEventListener('change',startLive);
+$('#network').addEventListener('change',()=>startLive(true));
+$('#blocks').addEventListener('change',()=>{windowSize=Number($('#blocks').value)||5000;if(following)restartActivity();});
 
 async function refreshApproval(){
  const address=onyxRealm;
