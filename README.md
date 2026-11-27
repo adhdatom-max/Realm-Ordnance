@@ -1,50 +1,46 @@
 # Realm Ordnance
 
-[Explore the public archipelago](https://realm-ordnance.andy-mawer.chatgpt.site) · [Check the Onyx realm package](https://gpas.onyx.testnets.gno.land/?path=gno.land/r/g19j4y5lzwkcuguf8a95pjueuhn7ay58gm0y3wen/realmordnance)
+A walkable, live chart of Gno.land. Sail an archipelago whose islands are realm categories, walk up to buildings to inspect their realms, and use the open ground to spot places where builders could add something new.
 
-Realm Ordnance turns the Gno ecosystem into a landscape you can explore and use. Each island represents a category of realms, such as DeFi, games, social projects, or tools. The island grows as more realms are charted there. Each realm has its own place on the land: successful calls raise its hill, while distinct callers and active blocks shape its footprint and settlement. A quiet realm may be a cottage; growing participation makes a village, and sustained use can make a castle.
+The browser scans Gno RPC for realm calls in a chosen block window. Island area follows the number of charted realms in that category. Each realm shapes its own rise: height follows successful calls, width follows distinct callers, and footprint follows active blocks. Small settlements grow from cottages to villages and castles as activity grows. These are visual measures of use, not endorsements or a measure of code quality. Categories inferred from names may be wrong.
 
-This is also a way to find where to build. Search for a realm, compare activity across categories, inspect a building to see its path and recent use, and follow its link into the real Gno realm. Wander through quiet areas to discover projects that could use contributors, or look across an island to spot gaps where a new tool, game, or community might belong. The terrain is an invitation to investigate, not a claim that activity alone measures quality. Walk the islands in first person, take a boat from a jetty, steer between categories, or let the boat give you a slow tour of the archipelago.
+## Explore
 
-The browser scans Mainnet or Onyx for recent realm activity. The Gno realm on Onyx provides a public, inspectable snapshot and read routes for the mapped districts and plots. Its snapshot is published in batches and replaced atomically; it requires an external publisher to keep it up to date.
+Open `web/index.html` in a modern desktop browser. There is no build step. The initial terrain is a **synthetic demo**, clearly labelled until the live scan completes. Choose Mainnet or Onyx and a block window; the browser fetches and verifies activity from that chain's RPC. The searchable catalogue can contain more realms than the chart: the chart shows active realms and a few older sightings in sparse categories. A quiet Games island remains available for its jetty and tackle shop even if no Games realm was active in the window.
 
-## What is here
+- Open the chart for an overhead view and search realm names and paths.
+- Switch to first person, use WASD or arrows to walk, and drag to look. Click a building to inspect its realm and follow **Enter realm**.
+- At a jetty, press E or the action button to board or land. W/S controls boat speed and A/D steers. Auto Tour cruises at a slower pace around the islands; manual steering is faster.
+- Find the tackle shop on Games island, take a rod, and cast from a jetty or boat with F or the button. At a bite, answer an **untimed** Go question with one retry to set the hook. Then hold F to reel and release when tension rises. The catch book, rod and lesson score stay in browser storage. Fishing is a local diversion, not an on-chain transaction.
+- Live updates do not teleport someone mid-walk or mid-sail. Changed terrain is applied when you return to a jetty.
 
-- `realm/ordnance.gno` is the Gno (Go dialect) realm that stores and renders published snapshots. `Begin`, `AddDistricts`, and `AddPlots` stage batched data; `Publish` swaps the complete map into view. A failed batch cannot expose a half-finished map.
-- `realm/ordnance_test.gno` tests the snapshot swap and settlement thresholds against the GnoVM.
-- `web/index.html` is the self-contained 3D browser view. Its live catalogue and activity scan read Mainnet or Onyx RPC directly. The 3D renderer and boat controls are JavaScript because Gno runs on chain, not inside the browser.
+Three.js is bundled inside the HTML. The 3D view needs WebGL; live chain scans need internet access. RPC access from a browser also depends on the selected endpoint being reachable and permitting browser requests. A failed scan leaves the labelled demo visible and retries; it does not turn example activity into live data.
 
-The browser can also import `data/plots` and `data/districts` CSV exports from the Gno realm. The on-chain publisher must send verified observations from the scanner; the realm validates structure and access, but cannot independently scan historical block receipts. In the browser, the live scan verifies transaction receipts before counting successful direct realm calls. Category labels are inferred from names and should not be treated as verified descriptions.
+## Gno realm on Onyx
 
-## Run locally
+The Gno source is `realm/ordnance.gno`, package `realmordnance`, at:
 
-Open `web/index.html` in a recent browser with WebGL. Choose Mainnet or Onyx and allow the scan to finish. Walk with WASD or arrows, drag to look, click a building, press E at a jetty, or choose Auto Tour aboard the boat.
+`gno.land/r/g19j4y5lzwkcuguf8a95pjueuhn7ay58gm0y3wen/realmordnance`
 
-## A little fishing break
+The package was submitted to Onyx in transaction `i74mvucW0bg2J9ZI1FYqIXyV0ZH3r00GU+B0QQYvETA=` at height 1,373,705. Submission and activation are distinct. Check its current status through [Onyx package status](https://gpas.onyx.testnets.gno.land/?path=gno.land/r/g19j4y5lzwkcuguf8a95pjueuhn7ay58gm0y3wen/realmordnance). The site must not claim the realm is usable until Onyx enables it and a snapshot is published.
 
-The Games jetty has **The Reel Deal**, a tackle shop. Walk into The Reel Deal at the land end of the jetty and borrow a free rod. You can click the hut or use the Fishing button to view the tackle shop; the rod is collected inside. Answer a quick Go quiz question to cast from any jetty or stop your boat. When the red float dips, press **Strike!** and answer another question to reel in the catch. Board the boat with your rod at the end of any jetty; the fishing panel also has a boarding button there. Catches, an occasional old boot and a message in a bottle are saved in the catch book on that browser. Walking reels the line in. An empty Games island stays available as open ground when no games have recent calls. The shop and catches are recreational scenery and browser state; they do not count as realms or chain activity.
+The realm stores a **labelled snapshot** of districts and plots. It has a gnoweb overview, district pages, and machine-readable `data/districts` and `data/plots` CSV render routes. The owner stages a snapshot using these calls, in order:
 
-## Test the Gno realm
+1. `Begin(cur, label, date)` starts a replacement while the old published map stays visible.
+2. `AddDistricts(cur, csv)` stages up to 80 `name,x,z,radius` rows per call.
+3. `AddPlots(cur, csv)` stages up to 80 `path,district,name,calls,callers,blocks,x,z,last` rows per call. `x,z` here are offsets from the district centre.
+4. `Publish(cur)` validates completion and swaps the staged map into view atomically.
 
-With the Gno toolchain installed, run `gno test -v .` inside `realm/`. This package was tested locally using GnoVM v1.8.0 with the Gno source tree set as `GNOROOT`.
+The on-chain source validates field shapes and bounds, but **does not independently verify the supplied activity counts**. The browser's live scan is separate from this owner-published snapshot. A snapshot has to be prepared from verified scan results and published by the owner; merely deploying the package does not populate it. The realm's `Height` uses an integer square-root score relative to its snapshot maximum, while the browser applies a fixed logarithmic height scale to live activity. They convey the same ordering but are not numerically identical.
 
-## Deploy and publish a snapshot
+Once the package is enabled and populated, click **Load Onyx realm** in the browser to read both CSV routes directly with `vm/qrender`. This switches the view to that on-chain snapshot and pauses the live scan. It reports an error if activation or publication is still pending. **Load Onyx CSVs** remains available for files exported from those two routes. Selecting Onyx in the network menu instead scans current Onyx activity from RPC; it does not claim to read the stored snapshot.
 
-The module path in `realm/gnomod.toml` uses Artemis's public Gno address. The package was uploaded to Onyx at `gno.land/r/g19j4y5lzwkcuguf8a95pjueuhn7ay58gm0y3wen/realmordnance` in transaction `i74mvucW0bg2J9ZI1FYqIXyV0ZH3r00GU+B0QQYvETA=` at block 1373705. [Its package approval status](https://gpas.onyx.testnets.gno.land/?path=gno.land/r/g19j4y5lzwkcuguf8a95pjueuhn7ay58gm0y3wen/realmordnance) is **in review queue** as last reported, so the realm is not yet callable. The package name and last path element are both `realmordnance`.
+## Source and checks
 
-The deploying address owns the new realm. After it is enabled, call these functions in order from that address:
+- `web/index.html` — single-file browser client, live scanner, chart, walk and boat modes.
+- `realm/ordnance.gno` and `realm/gnomod.toml` — Onyx realm source and module path.
+- `realm/ordnance_test.gno` — Gno tests for staging, atomic publication and bounds.
 
-1. `Begin(label, date)` to start staging a replacement.
-2. `AddDistricts(csv)` with up to 80 `name,x,z,radius` rows per call.
-3. `AddPlots(csv)` with up to 80 `path,district,name,calls,callers,blocks,x,z,last` rows per call. Coordinates are offsets from their district centre. CSV fields cannot contain commas or newlines.
-4. `Publish()` to make the validated snapshot visible all at once.
+Run the realm tests with a compatible Gno toolchain by opening the `realm/` directory and running `gno test .`. Test the browser with a reachable RPC, including clicking **Load Onyx realm** after the package is enabled and a snapshot published. A deployment receipt alone cannot establish that the realm is active or that this round trip works.
 
-The two read routes are `data/districts` and `data/plots`. A category route such as `defi` renders its buildings and links to their actual Gno realm pages. The `data/plots` output includes `txs`, `callers` and `activeBlocks` columns understood by the browser importer.
-
-A snapshot is externally supplied and dated; it is **not** magically kept current by the realm. The browser continues its own live RPC scan, and a publisher must deliberately update the on-chain snapshot. Limits are 40 districts, 2,000 plots and 80 rows per call.
-
-## Hackathon status
-
-This repository is source code, not a submission receipt. The DoraHacks rules require a working testnet deployment, public repository, README, demo video and description. The `realmordnance` package has been uploaded but awaits approval. It still needs activation, a published snapshot and verification that `Render` works before it can be described as a working on-chain realm.
-
-The embedded Three.js renderer retains its upstream copyright notice. All project-specific source is provided for public review; a licence for reuse has not yet been chosen.
+Realm Ordnance is an independent project and is not operated or endorsed by Gno.land.

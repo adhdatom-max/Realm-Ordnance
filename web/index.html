@@ -15,6 +15,18 @@ button{font:inherit;border:2px solid var(--ink);background:#fff8e6;color:var(--i
 canvas{position:absolute;left:0;top:0;width:100%;height:100%}
 .ctl{position:absolute;right:8px;top:8px;display:flex;flex-direction:column;gap:6px;z-index:3}
 .ctl button{width:38px;height:38px;font:20px Georgia}
+#strike,#fight{position:absolute;z-index:5;left:50%;top:12px;transform:translateX(-50%);width:min(430px,calc(100% - 20px));background:#fff8e6f2;border:2px solid var(--ink);padding:10px 12px;font:13px monospace}
+#strike[hidden],#fight[hidden]{display:none}
+#strike pre{margin:8px 0 4px;padding:8px;background:#2a2118;color:#f4e9c8;font:14px/1.45 monospace;white-space:pre-wrap}
+#sk-tip{margin:8px 0 0;padding:7px 9px;background:#e8f0d8;border-left:4px solid #2f7d4f;font:13px/1.4 Georgia,serif}
+#sk-opts button:disabled{opacity:.35;text-decoration:line-through;cursor:default}
+#sk-q{font-weight:bold;margin:4px 0}#sk-opts{display:flex;gap:6px;flex-wrap:wrap}
+#sk-opts button{flex:1;min-width:80px;padding:9px 6px;font:bold 14px monospace;background:#fff;border:2px solid var(--ink);cursor:pointer}
+#fg-prog{height:7px;background:#d9cdb2;margin-top:8px}#fg-prog i{display:block;height:100%;background:#2f7d4f;width:0}
+#fg-ten{position:relative;height:16px;background:linear-gradient(90deg,#b5532a 0,#d9cdb2 12%,#d9cdb2 88%,#b5532a 100%);margin-top:6px;border:1px solid var(--ink)}
+#fg-zone{position:absolute;left:22%;width:64%;top:0;bottom:0;background:#6fae7c88}#fg-mark{position:absolute;top:-3px;width:5px;height:22px;background:var(--ink);left:0}
+#fish{position:absolute;right:10px;bottom:12px;z-index:3;padding:9px 14px;font-weight:bold;display:none;background:#1f5d73;color:#fff8e6;border:2px solid var(--ink)}
+@media (pointer:coarse){#fish{bottom:64px}}
 #act{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);z-index:3;padding:9px 16px;font-weight:bold;display:none;background:var(--ink);color:var(--paper)}
 #info{margin:8px 14px;padding:10px;border:1px solid var(--ink);background:#fff8e6;font:13px monospace;min-height:72px;line-height:1.45}
 #info a{color:var(--acc)}
@@ -41,17 +53,13 @@ canvas{position:absolute;left:0;top:0;width:100%;height:100%}
 #inspect a{color:var(--acc)}
 #close-inspect{position:absolute;right:7px;top:7px;font-size:17px;padding:0 6px}
 @media (pointer:coarse){#wrap.in-deck #inspect{bottom:98px}}
-
-#fishing-panel{position:absolute;right:12px;bottom:16px;z-index:5;width:min(340px,calc(100% - 24px));max-height:70%;overflow:auto;padding:18px;background:#fff8e6f5;border:2px solid #80654a;box-shadow:0 6px 25px #182b2855;line-height:1.5;font-size:16px;touch-action:pan-y;user-select:text}
-#fishing-panel[hidden]{display:none}#fishing-panel h2{font-size:22px;margin:0 30px 5px 0}#fishing-panel p{margin:8px 0}#fishing-panel button{padding:8px 12px;font-size:16px}#fishing-panel .close{position:absolute;right:8px;top:7px;padding:0 7px}#fish-status{min-height:50px}#catch-list{padding:0;list-style:none;font-size:14px}#catch-list li{padding:4px 0;border-bottom:1px solid #80654a33}.ctl button#fish-open{width:auto;height:34px;padding:0 10px;font-size:14px}
-#fish-quiz{margin:8px 0 14px;padding:12px;border:1px solid #80654a;background:#f4ead0}#fish-quiz[hidden],#fish-board[hidden]{display:none}#fish-question{display:block;margin-bottom:8px}#fish-answers{display:grid;gap:6px}#fish-answers button{text-align:left}
 </style></head><body>
 <header><h1>Realm Ordnance<span id="badge">SYNTHETIC DEMO</span></h1><div id="src"></div></header>
-<div class="bar"><select id="network" aria-label="Network"><option value="mainnet">Mainnet</option><option value="onyx">Onyx testnet</option></select><select id="blocks" aria-label="Activity window"><option value="1200">1,200 blocks</option><option value="2400">2,400 blocks</option><option value="5000" selected>5,000 blocks</option></select><button id="live" type="button">Pause live</button><input id="search" type="search" placeholder="Search realms" aria-label="Search realms"><span id="live-state" role="status"></span><button id="bF">Load Onyx CSVs (data/plots + data/districts)</button><input id="cf" type="file" accept=".csv,.txt" multiple hidden></div><div id="search-results"></div>
-<div id="wrap"><canvas id="c" aria-label="Archipelago chart"></canvas><canvas id="deck" aria-label="First-person archipelago" hidden></canvas><div id="nav" hidden><strong id="heading"></strong><small id="journey"></small></div><div id="realm-tag" hidden></div><div class="ctl"><button id="view" type="button">First person</button><button id="tour" type="button" hidden>Auto Tour</button><button id="fish-open" type="button">Fishing</button><button id="zi">+</button><button id="zo">−</button><button id="zl" title="Fit archipelago">Fit</button></div><button id="act" type="button"></button><aside id="inspect" aria-label="Realm details" hidden><button id="close-inspect" type="button" aria-label="Close realm details">×</button><div id="inspect-body" aria-live="polite"></div></aside><aside id="fishing-panel" aria-label="Tackle shop and catch book" hidden><button class="close" id="fish-close" aria-label="Close fishing">×</button><h2>The Reel Deal</h2><small>Games jetty tackle shop · just for fun</small><p id="fish-status" role="status" aria-live="polite"></p><div id="fish-quiz" hidden><strong id="fish-question"></strong><div id="fish-answers"></div></div><button id="fish-action" type="button">Borrow a rod</button> <button id="fish-book" type="button">Catch book</button> <button id="fish-board" type="button" hidden>Board the boat</button><ul id="catch-list" hidden></ul></aside><div id="helm" hidden aria-label="Movement controls"><span></span><button data-key="w" aria-label="Forward">↑</button><span></span><button data-key="a" aria-label="Left">←</button><button data-key="s" aria-label="Reverse">↓</button><button data-key="d" aria-label="Right">→</button></div></div>
+<div class="bar"><select id="network" aria-label="Network"><option value="mainnet">Mainnet</option><option value="onyx">Onyx testnet</option></select><select id="blocks" aria-label="Activity window"><option value="1200">1,200 blocks</option><option value="2400">2,400 blocks</option><option value="5000" selected>5,000 blocks</option></select><button id="live" type="button">Pause live</button><input id="search" type="search" placeholder="Search realms" aria-label="Search realms"><span id="live-state" role="status"></span><button id="bOnyx" type="button">Load Onyx realm</button><button id="bF" type="button">Load Onyx CSVs</button><input id="cf" type="file" accept=".csv,.txt" multiple hidden></div><div id="search-results"></div>
+<div id="wrap"><canvas id="c" aria-label="Archipelago chart"></canvas><canvas id="deck" aria-label="First-person archipelago" hidden></canvas><div id="nav" hidden><strong id="heading"></strong><small id="journey"></small></div><div id="realm-tag" hidden></div><div class="ctl"><button id="view" type="button">First person</button><button id="tour" type="button" hidden>Auto Tour</button><button id="zi">+</button><button id="zo">−</button><button id="zl" title="Fit archipelago">Fit</button></div><button id="act" type="button"></button><button id="fish" type="button" hidden></button><div id="strike" hidden><b>Fish on! Take your time. Read the tip, work it out, pick an answer (1 / 2 / 3).</b><div id="sk-tip"></div><pre id="sk-code"></pre><div id="sk-q"></div><div id="sk-opts"></div></div><div id="fight" hidden><div id="fg-hint"></div><div id="fg-ten"><span id="fg-zone"></span><i id="fg-mark"></i></div><div id="fg-prog"><i></i></div></div><aside id="inspect" aria-label="Realm details" hidden><button id="close-inspect" type="button" aria-label="Close realm details">×</button><div id="inspect-body" aria-live="polite"></div></aside><div id="helm" hidden aria-label="Movement controls"><span></span><button data-key="w" aria-label="Forward">↑</button><span></span><button data-key="a" aria-label="Left">←</button><button data-key="s" aria-label="Reverse">↓</button><button data-key="d" aria-label="Right">→</button></div></div>
 <div id="info"></div>
 <div id="key"><b>Key:</b> one island per category · island area follows charted realm count · height: successful call transactions · width: distinct callers · footprint: active blocks · Older sightings and offshore realms are marked · WASD or arrows to move · drag to look · click a building to inspect · E to board or land · Auto Tour is available aboard.</div>
-<footer style="margin:10px 0"><a href="https://gpas.onyx.testnets.gno.land/?path=gno.land/r/g19j4y5lzwkcuguf8a95pjueuhn7ay58gm0y3wen/realmordnance" target="_blank" rel="noopener">Onyx package status</a> · <span id="pkg-state">Realm Ordnance package on Onyx</span></footer>
+<footer style="margin:10px 0"><a href="https://rpc.onyx.testnets.gno.land/tx?hash=0x8bbe26bee716d1b83627d648d4562a217c95d191f7af4d0653e07441062f1130" target="_blank" rel="noopener">Onyx package transaction</a> · <span id="pkg-state">Checking Onyx package status…</span></footer>
 <script>
 console.warn('Scripts "build/three.js" and "build/three.min.js" are deprecated with r150+, and will be removed with r160. Please use ES Modules or alternatives: https://threejs.org/docs/index.html#manual/en/introduction/Installation'),
 /**
@@ -192,10 +200,7 @@ function mk(I){
   const apron=.021*smooth(inland/.20);
   const rising=upland*smooth((inland-.025)/.63);
   const rolling=.012*(texture(x-coast.x,y-coast.y)-.5)*smooth(inland/.22);
-  // Empty Games still has rolling natural ground, never invented realm summits.
-  const natural=I.n==='games'&&I.empty ? .14*smooth(inland/.42)*(
-   .55+.45*Math.sin((x-coast.x)/23+seed*.001)*Math.cos((y-coast.y)/28)) :0;
-  return C+apron+rising+rolling+natural;
+  return C+apron+rising+rolling;
  };
  I.ground=ground;
  I.F=(x,y)=>{
@@ -485,16 +490,17 @@ $('#act').onclick=act;
 addEventListener('keydown',e=>{
  if(e.target?.matches?.('input,select,textarea,[contenteditable]')||e.ctrlKey||e.metaKey||e.altKey)return;
  const key=e.key.toLowerCase();
- if(key==='escape'&&!$('#fishing-panel').hidden){closeFishing();e.preventDefault();return;}
  if(key==='escape'&&inspectOpen){closeInspector();e.preventDefault();return;}
  if(walkKeys.includes(key)){keys[key]=1;e.preventDefault();}
  if(key==='e'&&!e.repeat){act();e.preventDefault();}
+ if(key==='f'){fishHeld=true;if(!e.repeat)fishAction();e.preventDefault();}
+ if((key==='1'||key==='2'||key==='3')&&fishing?.state==='bite'){answerStrike(+key-1);e.preventDefault();}
 });
-addEventListener('keyup',e=>delete keys[e.key.toLowerCase()]);
+addEventListener('keyup',e=>{delete keys[e.key.toLowerCase()];if(e.key.toLowerCase()==='f')fishHeld=false});
 addEventListener('blur',clearKeys);
 const pointerSlop=6;
 wrap.addEventListener('pointerdown',e=>{
- if(e.button!==0||e.target.closest('button,#inspect,#fishing-panel'))return;
+ if(e.button!==0||e.target.closest('button,#inspect'))return;
  wrap.setPointerCapture(e.pointerId);
  const point={id:e.pointerId,x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY,moved:false,since:performance.now()};
  if(deck.active)drag=point;
@@ -518,7 +524,7 @@ wrap.addEventListener('pointerup',e=>{
  if(!point.moved&&Math.hypot(e.clientX-point.startX,e.clientY-point.startY)<pointerSlop&&
     (drag||performance.now()-point.since<180)){
   const realm=drag?pickDeckRealm(e.clientX,e.clientY):pickChartRealm(e.clientX,e.clientY);
-  if(realm?.fishingShop)openFishing();else if(realm)showInspector(realm.path);
+  if(realm)showInspector(realm.path);
  }
  ptr=null;drag=null;
 });
@@ -531,7 +537,6 @@ for(const button of $('#helm').querySelectorAll('button')){
  for(const event of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(event,()=>delete keys[key]);
 }
 function step(dt){
- if(fishing.stage==='waiting'||fishing.stage==='bite'){if(walkKeys.some(key=>keys[key]))stopFishing('Line reeled in. Find another spot whenever you like.');else return;}
  const side=+(!!(keys.d||keys.arrowright))-+(!!(keys.a||keys.arrowleft));
  const forward=+(!!(keys.w||keys.arrowup))-+(!!(keys.s||keys.arrowdown));
  const chartWalking=ptr&&(ptr.moved||performance.now()-ptr.since>=180);
@@ -552,8 +557,14 @@ function step(dt){
  }
  if(P.boat){B.x=P.x;B.y=P.y;B.hd=P.hd;}
 }
+function hutBlocked(x,y){
+ const h=deck.hut;if(!h)return false;
+ const lx=x-h.x,lz=y-h.z,u=lx*h.fx+lz*h.fz,v=-lx*h.fz+lz*h.fx;
+ return(Math.abs(u+2.1)<.5&&Math.abs(v)<2.4)||(Math.abs(Math.abs(v)-2)<.5&&u>-2.3&&u<2.2);
+}
+function hutArea(x,y){return deck.hut&&Math.hypot(x-deck.hut.x,y-deck.hut.z)<4.2}
 function houseBlocked(x,y){
- if(tackleWall(x,y))return true;
+ if(hutBlocked(x,y))return true;
  for(const {p} of PK){if(p.offshore)continue;
   const size=p.txs>=3?1.34:1,offs=buildingsFor(p);
   for(const [ox,oz] of offs)if(Math.hypot(x-(p.lx+ox),y-(p.ly+oz))<2.4*size)return true;
@@ -575,14 +586,10 @@ function moveBy(dx,dy){
  if(!tryMove(P.x+dx,P.y+dy)){tryMove(P.x+dx,P.y);tryMove(P.x,P.y+dy)}
 }
 function act(){
- if(cur?.act==='tackle'){openFishing();return;}
- if(cur?.act==='fish'){openFishing();if(fishing.rod&&fishing.stage==='idle')askFishingQuiz('cast');return;}
  if(!cur)return;
+ if(cur.act==='rod'){takeRod();cur=null;return}
  if(cur.act==='climb'){const j=cur.j,a=Math.max(1,Math.min(j.length-1,alongJetty(j,P.x,P.y)));P.x=j.x0+j.dx*a;P.y=j.y0+j.dy*a;P.swim=false;deck.eye=null;deck.sy=null;cur=null;return}
  if(cur.act==='board'){
-  if(cur.j){B.x=cur.j.bx;B.y=cur.j.by;B.hd=Math.atan2(cur.j.dy,cur.j.dx);dockSeen=cur.j;}
-  if(fishing.stage!=='idle')stopFishing('Line reeled in while boarding.');
-  $('#fishing-panel').hidden=true;
   P.boat=true;P.swim=false;deck.sy=null;P.x=B.x;P.y=B.y;
   if(dockSeen)P.hd=Math.atan2(dockSeen.dy,dockSeen.dx);
   tourMessage='';deck.eye=null;
@@ -607,7 +614,7 @@ function settlement(p){
 }
 function buildingsFor(p){return settlement(p)==='Cottage'?[[0,0]]:[[0,0],[4,4],[-4,3]]}
 function building(p){
- if(p.offshore)return p.txs>=16?'Lighthouse':p.txs>=3?'Sea station':'Buoy';
+ if(p.offshore)return p.txs>=16?'Sea tower':p.txs>=3?'Sea station':'Buoy';
  return p.txs==null?'Survey marker':settlement(p);
 }
 function realmInfo(p){
@@ -635,8 +642,9 @@ function ui(){
   h='<b>At sea</b> · '+JT.length+' '+(JT.length===1?'island':'islands')+' · '+(deck.active?'W/S throttle · A/D steer':'WASD or arrows to sail');
  }else{
   const footJetty=jettyAt(P.x,P.y);
-  cur=footJetty&&alongJetty(footJetty,P.x,P.y)>=footJetty.length-27?{act:'board',j:footJetty,t:'Board the boat'}:null;
-  if(footJetty)h='<b>'+esc(footJetty.I.n)+' jetty</b> · Walk to the end of the jetty to board.'+(footJetty.I.n==='games'?' The Reel Deal tackle shop is ashore: turn around and walk inland.':'');
+  cur=footJetty&&gap(P,B)<34?{act:'board',t:'Board the boat'}:null;
+  if(!P.rod&&deck.hut&&!P.swim&&Math.hypot(P.x-deck.hut.x,P.y-deck.hut.z)<6.5)cur={act:'rod',t:'Take the fishing rod'};
+  if(footJetty)h='<b>'+esc(footJetty.I.n)+' jetty</b> · Walk to the end of the jetty to board.';
   else if(I)h='<b>'+esc(I.n)+' island</b> · '+(I.ps.length-1)+' charted realms · Click a building to inspect its realm.';
   if(P.swim){
    const cj=JT.find(j=>{const a=alongJetty(j,P.x,P.y),c=Math.abs((P.y-j.y0)*j.dx-(P.x-j.x0)*j.dy);return a>=-2&&a<=j.length+2&&c<=jettyHalfWidth+3.4});
@@ -644,8 +652,6 @@ function ui(){
    h='<b>In the water</b> · Swim under the jetty, climb back up, or swim ashore.';
   }
  }
- if(!P.boat&&!P.swim&&insideTackleShop())cur={act:'tackle',t:'Browse the tackle shop'};
- if(!cur&&fishing.rod&&fishingSpot())cur={act:'fish',t:'Cast a line'};
  const plotted=PK.find(({p})=>p.path===selectedPath)?.p;
  const near=PK.reduce((best,{p})=>{
   if(Boolean(p.offshore)!==P.boat)return best;
@@ -671,153 +677,9 @@ function ui(){
  button.hidden=!P.boat;
  button.textContent=tour?'Take the helm':pausedStops?'Resume Auto Tour':'Auto Tour';
  action.style.display=cur?'block':'none';if(cur)action.textContent=cur.t;
+ h+=fishNote();
  if(h!==lastHtml){$('#info').innerHTML=h;lastHtml=h;}
- if(!$('#fishing-panel').hidden)refreshFishing();
 }
-
-/* ---------- a small, browser-local fishing diversion ---------- */
-const fishSpecies=[{name:'Mackerel',icon:'🐟',min:22,max:43,weight:40},{name:'Sea bass',icon:'🐟',min:25,max:70,weight:27},{name:'Pollock',icon:'🐟',min:30,max:85,weight:18},{name:'Golden wrasse',icon:'🐠',min:15,max:38,weight:10},{name:'An old boot',icon:'🥾',min:28,max:28,weight:4},{name:'Message in a bottle',icon:'🍾',min:0,max:0,weight:1}];
-let fishingSaved={rod:false,catches:[]};
-try{const saved=JSON.parse(localStorage.getItem('realm-ordnance-fishing-v1'));if(saved&&Array.isArray(saved.catches))fishingSaved={rod:!!saved.rod,catches:saved.catches.filter(c=>fishSpecies.some(f=>f.name===c.name)&&Number.isFinite(c.cm)).slice(-100)};}catch{}
-const fishing={...fishingSaved,stage:'idle',due:0,until:0,point:null,origin:null,message:'',visual:null,quiz:null};
-const fishingQuestions=[
- {q:'In Go, what does len("gno") return?',a:['3','2','4'],correct:0},
- {q:'Which Go keyword starts a function?',a:['func','function','def'],correct:0},
- {q:'What does this Go expression produce: 2 + 3?',a:['5','23','6'],correct:0},
- {q:'Which Go type stores true or false?',a:['bool','string','int'],correct:0},
- {q:'Which Go keyword repeats a loop?',a:['for','repeat','while'],correct:0},
- {q:'In Go, what does len([]int{4, 8}) return?',a:['2','8','12'],correct:0},
- {q:'What does this Go expression produce: 7 > 3?',a:['true','false','7'],correct:0},
- {q:'Which Go declaration gives x the value 5?',a:['x := 5','x =: 5','let x = 5'],correct:0}
-];
-function askFishingQuiz(kind){
- const question=fishingQuestions[Math.floor(Math.random()*fishingQuestions.length)];
- const rotation=Math.floor(Math.random()*3),answers=question.a.map((_,i)=>question.a[(i+rotation)%3]);
- fishing.quiz={kind,question,answers,correct:(3-rotation)%3};fishing.stage='quiz';refreshFishing();
-}
-function answerFishingQuiz(choice){
- const quiz=fishing.quiz;if(!quiz)return;
- fishing.quiz=null;
- if(choice!==quiz.correct){stopFishing(quiz.kind==='cast'?'Wrong answer — your cast went astray. Try again.':'Wrong answer — the fish slipped off the hook!');return;}
- if(quiz.kind==='cast')beginFishing();else catchFish();
-}
-function saveFishing(){try{localStorage.setItem('realm-ordnance-fishing-v1',JSON.stringify({rod:fishing.rod,catches:fishing.catches}));}catch{}}
-function gamesDock(){return JT.find(j=>/^(games?|gaming)$/i.test(j.I.n));}
-function tackleLocation(){const j=gamesDock();return j?{x:j.x0-j.dx*15-j.dy*6,y:j.y0-j.dy*15+j.dx*6,j}:null;}
-function shopCoordinates(x,y){const q=tackleLocation();if(!q)return null;return {x:(x-q.x)*q.j.dx+(y-q.y)*q.j.dy,z:-(x-q.x)*q.j.dy+(y-q.y)*q.j.dx};}
-function insideTackleShop(){const v=shopCoordinates(P.x,P.y);return !!v&&!P.boat&&!P.swim&&Math.abs(v.x)<5.3&&Math.abs(v.z)<4.4;}
-function nearTackleShop(){const q=tackleLocation();return !!q&&!P.boat&&!P.swim&&gap(P,q)<13;}
-function tackleWall(x,y){const v=shopCoordinates(x,y);if(!v||Math.abs(v.x)>6.2||Math.abs(v.z)>5.25)return false;
- return Math.abs(v.z)>4.5||v.x< -5.6||(v.x>5.6&&Math.abs(v.z)>2.2);
-}
-function fishingSpot(){
- if(P.swim||!deck.active)return null;
- const j=jettyAt(P.x,P.y);
- if(!P.boat&&!j)return null;
- // Cast over the side of a jetty; aboard, find open water ahead of the bow.
- const heading=j?Math.atan2(j.dy,j.dx)+Math.PI/2:P.hd;
- for(const a of [0,.65,-.65,1.3,-1.3])for(const d of [16,24,34]){
-  const x=P.x+Math.cos(heading+a)*d,y=P.y+Math.sin(heading+a)*d;
-  if(inW(x,y)&&hF(x,y)[0]<C&&!jettyAt(x,y))return{x,y};
- }
- return null;
-}
-let renderedFishingQuiz=null;
-function refreshFishing(){
- const status=$('#fish-status'),action=$('#fish-action');
- const quiz=$('#fish-quiz');quiz.hidden=!fishing.quiz;action.hidden=!!fishing.quiz;
- if(fishing.quiz){
-  status.textContent=fishing.quiz.kind==='cast'?'Answer to cast your line.':'A bite! Answer to reel it in.';
-  if(renderedFishingQuiz!==fishing.quiz){
-   renderedFishingQuiz=fishing.quiz;$('#fish-question').textContent=fishing.quiz.question.q;
-   const answers=$('#fish-answers');answers.replaceChildren();
-   fishing.quiz.answers.forEach((answer,i)=>{const b=document.createElement('button');b.type='button';b.textContent=answer;b.onclick=()=>answerFishingQuiz(i);answers.append(b);});
-  }
- }else if(fishing.stage==='waiting'){status.textContent='Line is out. Watch the red float… wait for it to dip.';action.textContent='Reel in';action.disabled=false;}
- else if(fishing.stage==='bite'){status.textContent='A bite! The float is under — strike now!';action.textContent='Strike!';action.disabled=false;}
- else if(!fishing.rod){status.textContent=insideTackleShop()?'Welcome inside The Reel Deal! Borrow a rod, then cast from any jetty or your boat.':'Walk into The Reel Deal at the land end of the Games jetty to borrow a rod.';action.textContent='Borrow a rod';action.disabled=!insideTackleShop();}
- else{status.textContent=fishing.message||'Rod ready. Fish from a jetty or stop the boat to cast.';action.textContent='Cast a line';action.disabled=!fishingSpot();}
- if(!fishing.quiz)renderedFishingQuiz=null;
- $('#fish-board').hidden=cur?.act!=='board';
- const list=$('#catch-list');
- const contents=fishing.catches.length?'<li><b>'+fishing.catches.length+' catches · '+new Set(fishing.catches.map(c=>c.name)).size+' / '+fishSpecies.length+' discoveries</b></li>'+fishing.catches.slice().reverse().map(c=>'<li>'+esc(c.icon)+' '+esc(c.name)+(c.cm?' · '+c.cm+' cm':'')+'</li>').join(''):'<li>Your catch book is empty. The first one is out there.</li>';
- if(list.innerHTML!==contents)list.innerHTML=contents;
-}
-function openFishing(){clearKeys();drag=null;ptr=null;$('#fishing-panel').hidden=false;refreshFishing();}
-function stopFishing(message=''){fishing.stage='idle';fishing.quiz=null;fishing.point=null;fishing.origin=null;fishing.message=message;refreshFishing();}
-function closeFishing(){stopFishing();$('#fishing-panel').hidden=true;}
-function beginFishing(now=performance.now()){
- const point=fishingSpot();if(!point){fishing.message='Step onto a jetty or board your boat to fish.';refreshFishing();return;}
- if(tour)cancelTour('Taking a fishing break');
- clearKeys();P.hd=Math.atan2(point.y-P.y,point.x-P.x);deck.pitch=-.16;fishing.stage='waiting';fishing.point=point;fishing.origin={x:P.x,y:P.y,boat:P.boat};fishing.due=now+3000+Math.random()*5000;fishing.until=0;fishing.message='';refreshFishing();
-}
-function tickFishing(now){
- if(fishing.stage!=='waiting'&&fishing.stage!=='bite')return;
- if(!deck.active||P.swim||!fishing.origin||gap(P,fishing.origin)>2||P.boat!==fishing.origin.boat){stopFishing('Line reeled in as you moved.');return;}
- if(fishing.stage==='waiting'&&now>=fishing.due){fishing.stage='bite';fishing.until=now+10000;refreshFishing();}
- else if(fishing.stage==='bite'&&now>fishing.until)stopFishing('It got away! Try another cast.');
-}
-function catchFish(now=performance.now()){
- if((fishing.stage!=='bite'&&fishing.stage!=='quiz')||(fishing.stage==='bite'&&now>fishing.until)){stopFishing('It got away! Try another cast.');return null;}
- let roll=Math.random()*100,fish=fishSpecies[0];for(const candidate of fishSpecies){roll-=candidate.weight;if(roll<0){fish=candidate;break;}}
- const cm=fish.min?Math.round(fish.min+Math.random()*(fish.max-fish.min)):0;
- const caught={name:fish.name,icon:fish.icon,cm};fishing.catches.push(caught);fishing.catches=fishing.catches.slice(-100);saveFishing();
- stopFishing(fish.name==='Message in a bottle'?'A message in a bottle: “Somewhere out there, a realm is waiting for its first visitor.”':fish.name==='An old boot'?'An old boot! The sea has a sense of humour.':fish.icon+' Caught a '+fish.name.toLowerCase()+' — '+cm+' cm! Added to your catch book.');return caught;
-}
-$('#fish-open').onclick=openFishing;$('#fish-close').onclick=closeFishing;
-$('#fish-board').onclick=()=>{if(cur?.act==='board')act();};
-$('#fish-book').onclick=()=>{$('#catch-list').hidden=!$('#catch-list').hidden;refreshFishing();};
-$('#fish-action').onclick=()=>{
- if(!fishing.rod){if(!insideTackleShop())return;fishing.rod=true;saveFishing();fishing.message='A rod, a float and a bit of patience. All yours — head down the jetty!';refreshFishing();}
- else if(fishing.stage==='bite')askFishingQuiz('strike');else if(fishing.stage==='waiting')stopFishing('A little early! Wait for the float to dip before striking.');else askFishingQuiz('cast');
-};
-function buildTackleShop(world){
- const q=tackleLocation();if(!q)return;
- const {wood,cream,blue,trim}=deck,g=new THREE.Group();
- g.position.set(q.x,meshElevation(q.x,q.y),q.y);
- g.rotation.y=-Math.atan2(q.j.dy,q.j.dx);g.userData.fishingShop=true;world.add(g);
- const timber=new THREE.MeshStandardMaterial({color:0x8b5c36,roughness:.9}),wall=new THREE.MeshStandardMaterial({color:0xf3dfb6,roughness:.94}),roofMat=new THREE.MeshStandardMaterial({color:0x8c4f35,roughness:.9}),floor=new THREE.MeshStandardMaterial({color:0x735138,roughness:.9});
- // The open front faces the jetty. There is space to walk through to the counter.
- box(g,12,.65,10,0,-.15,0,wood);box(g,11.8,.15,9.8,0,.23,0,floor);
- box(g,.55,4.8,10,-5.75,2.7,0,wall);
- for(const z of [-4.75,4.75])box(g,11.5,4.8,.5,0,2.7,z,wall);
- for(const z of [-3.65,3.65])box(g,.5,4.8,2.7,5.75,2.7,z,wall);
- box(g,.55,1.05,4.8,5.75,4.55,0,wall);
- for(const z of [-2.25,2.25])box(g,.25,4.1,.28,5.85,2.2,z,timber);
- box(g,.25,.25,4.7,5.85,4.25,0,timber);
- const top=new THREE.Mesh(cottageRoof(11.4,2.5,13.3),roofMat);top.position.y=5.15;top.rotation.y=Math.PI/2;g.add(top);
- for(const z of [-5.65,5.65])box(g,12.4,.22,.18,0,5.04,z,timber);
- // Window frames, a lantern and a sign are readable from the boat.
- for(const z of [-4.96,4.96]){box(g,2.2,1.8,.09,1.2,3.3,z,blue);box(g,2.4,.13,.16,1.2,3.3,z,cream);box(g,.13,2,.16,1.2,3.3,z,cream);}
- const canvas=document.createElement('canvas');canvas.width=512;canvas.height=128;const c=canvas.getContext('2d');c.fillStyle='#173d42';c.fillRect(0,0,512,128);c.strokeStyle='#e8d6a5';c.lineWidth=7;c.strokeRect(5,5,502,118);c.fillStyle='#fff4d2';c.textAlign='center';c.font='bold 39px Georgia';c.fillText('THE REEL DEAL',256,55);c.font='25px Georgia';c.fillText('Tackle & tall tales',256,96);
- const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
- const sign=new THREE.Mesh(new THREE.PlaneGeometry(7.3,1.85),new THREE.MeshStandardMaterial({map:texture,roughness:.8,side:THREE.DoubleSide}));sign.rotation.y=Math.PI/2;sign.position.set(6.83,5.7,0);sign.userData.trailMap=texture;g.add(sign);
- for(const z of [-3.6,3.6]){const lamp=new THREE.Mesh(new THREE.SphereGeometry(.23,10,8),new THREE.MeshStandardMaterial({color:0xffdeb0,emissive:0xffa03b,emissiveIntensity:.8}));lamp.position.set(6,3.9,z);g.add(lamp);}
- // Shelves and rods show that the shop has an interior, not a painted facade.
- box(g,1.15,1.4,7.3,-3.9,1.2,0,timber);
- for(const z of [-2.7,-.9,.9,2.7]){box(g,.18,2.6,.16,-4.1,2.6,z,wood);box(g,.5,.24,.32,-3.4,2.45,z,blue);}
- box(g,1.6,1,2.6,-1.2,.7,2.85,wood);
- for(const z of [-3,-2.6,-2.2]){const rod=box(g,.06,3.6,.06,-4.6,2.8,z,timber);rod.rotation.z=-.12;}
- box(g,1.3,.9,.9,3.9,.45,-3,blue);
-}
-function updateFishingVisuals(t){
- if(!fishing.visual){
-  const root=new THREE.Group(),float=new THREE.Group(),rod=new THREE.Group();deck.scene.add(root);root.add(float,rod);
-  const red=new THREE.MeshStandardMaterial({color:0xd3442d,roughness:.4}),white=new THREE.MeshStandardMaterial({color:0xfff5dc}),dark=new THREE.MeshStandardMaterial({color:0x44352b});
-  const bulb=new THREE.Mesh(new THREE.SphereGeometry(.23,12,8),red);float.add(bulb);box(float,.12,.65,.12,0,.38,0,white);box(float,.1,.16,.1,0,.77,0,red);
-  const shaft=new THREE.Mesh(new THREE.CylinderGeometry(.018,.035,2.4,8),dark);shaft.rotation.x=-.6;rod.add(shaft);rod.rotation.z=-.25;
-  const lineGeo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3()]);
-  const line=new THREE.Line(lineGeo,new THREE.LineBasicMaterial({color:0xeee3bd,transparent:true,opacity:.7}));root.add(line);
-  fishing.visual={root,float,rod,line};
- }
- const {root,float,rod,line}=fishing.visual;root.visible=!!fishing.point;if(!root.visible)return;
- const q=fishing.point,wave=swellAt(q.x,q.y,t/1000),dip=fishing.stage==='bite'?.65:0;
- float.position.set(q.x,-.63+wave.h*.8-dip,q.y);float.rotation.z=Math.sin(t*.002)*.12;
- const offset=new THREE.Vector3(.48,-.55,-1.2).applyQuaternion(deck.camera.quaternion);rod.position.copy(deck.camera.position).add(offset);rod.quaternion.copy(deck.camera.quaternion);rod.rotateX(-.45);
- const tip=new THREE.Vector3(0,1.05,-.6).applyQuaternion(rod.quaternion).add(rod.position),v=line.geometry.attributes.position;
- v.setXYZ(0,tip.x,tip.y,tip.z);v.setXYZ(1,float.position.x,float.position.y+.5,float.position.z);v.needsUpdate=true;line.geometry.computeBoundingSphere();
-}
-
 /* ---------- first-person renderer ---------- */
 const SW=[[.86,.51,.045,.55,.34],[-.42,.91,.083,.78,.17],[.97,-.24,.16,1.05,.07]];
 function swellAt(x,z,t){let h=0,gx=0,gz=0;for(const [dx,dz,k,w,a] of SW){const p=(x*dx+z*dz)*k+t*w,c=a*k*Math.cos(p);h+=a*Math.sin(p);gx+=c*dx;gz+=c*dz}return{h,gx,gz}}
@@ -1177,7 +1039,7 @@ function besideTrail(I,x,z,r){
 }
 function islandFlora(I,world){
  const centre=I.ps[0],r=centre.s,rand=rng(I.seed^8361),group=new THREE.Group();
- const types={bark:[],leaves:[],gorse:[],rock:[],flowers:[]};
+ const types={bark:[],leaves:[],gorse:[],rock:[],flowers:[],cone:[]};
  const pose=new THREE.Object3D();
  function add(type,x,y,z,sx,sy,sz,color,tilt=0){
   pose.position.set(x,y,z);pose.scale.set(sx,sy,sz);pose.rotation.set(0,rand()*6.283,tilt);
@@ -1186,29 +1048,43 @@ function islandFlora(I,world){
  function patch(type,x,z,n,spread){
   for(let i=0;i<n;i++){
    const a=rand()*6.28,d=Math.sqrt(rand())*spread,px=x+Math.cos(a)*d,pz=z+Math.sin(a)*d;
-   if(houseBlocked(px,pz)||jettyAt(px,pz)||besideTrail(I,px,pz,.96))continue;
-   const y=meshElevation(px,pz),size=.45+rand()*.8;
+   if(houseBlocked(px,pz)||hutArea(px,pz)||jettyAt(px,pz)||besideTrail(I,px,pz,.96))continue;
+   const y=meshElevation(px,pz),size=(.45+rand()*.8)*(type==='rock'&&rand()<.1?2.6:1);
    if(y<-.12)continue;
    if(type==='rock'){
     add('rock',px,y+.1*size,pz,.45*size,.26*size,.36*size,rand()>.4?0x8b8b7f:0x6e7771);
    }else if(type==='gorse'){
     add('gorse',px,y+.24*size,pz,.60*size,.49*size,.52*size,rand()>.52?0x7c873f:0x556d37);
     for(let j=0;j<5;j++)add('flowers',px+(rand()-.5)*.62*size,y+(.47+rand()*.17)*size,pz+(rand()-.5)*.55*size,.11*size,.072*size,.1*size,rand()>.4?0xf3c74c:0xca9c41);
+   }else if(type==='reed'){
+    const hh=.9+rand()*.9;add('bark',px,y+hh*.5,pz,.045,hh,.045,rand()>.5?0x7f9b4e:0x6a8a42,(rand()-.5)*.2);
+    if(rand()<.3)add('flowers',px,y+hh,pz,.05,.2,.05,0x5b4630);
    }else{
-    for(let j=0;j<4;j++)add('flowers',px+(rand()-.5)*.35,y+.15+rand()*.13,pz+(rand()-.5)*.35,.065,.043,.066,type==='daisies'?0xf4edcf:0xb09cc0);
+    for(let j=0;j<4;j++)add('flowers',px+(rand()-.5)*.35,y+.15+rand()*.13,pz+(rand()-.5)*.35,.065,.043,.066,({daisies:0xf4edcf,poppy:0xd8503a,bell:0x7b93d6})[type]??0xb09cc0);
    }
   }
  }
- const sites=Math.min(175,Math.ceil(r*r*.017));
+ const sites=Math.min(380,Math.ceil(r*r*.036));
  for(let i=0;i<sites;i++){
   const angle=rand()*6.28,d=Math.sqrt(rand())*r*1.14,x=centre.lx+Math.cos(angle)*d,z=centre.ly+Math.sin(angle)*d;
   const y=meshElevation(x,z);
-  if(y<-.12||houseBlocked(x,z)||jettyAt(x,z))continue;
-  if(y<.60){patch('rock',x,z,11,2.5);continue}
+  if(y<-.12||houseBlocked(x,z)||hutArea(x,z)||jettyAt(x,z))continue;
+  if(y<.60){
+   const q=rand();
+   if(q<.30&&y>.02){const h=3+rand()*1.8;add('bark',x,y+h*.5,z,.13,h,.13,0x8a7656,(rand()-.5)*.3);
+    for(let j=0;j<7;j++)add('leaves',x,y+h,z,1.5+rand()*.4,.06,.34,[0x3f7d3b,0x58963f][j%2],-.45)}
+   else if(q<.55)patch('reed',x,z,9,1.6);
+   else if(q<.68)add('bark',x,y+.12,z,.09,1.6+rand(),.09,0x9c8d78,1.5);
+   else patch('rock',x,z,6,2.2);
+   continue}
   const slope=Math.hypot(meshElevation(x+1,z)-y,meshElevation(x,z+1)-y);
   if(slope>.55){patch('rock',x,z,7,2.5);continue}
   // Keep tree crowns below the realm skyline and clear of the approach to a door.
   const room=I.ps.every(p=>p.ghost||p.offshore||Math.hypot(p.lx-x,p.ly-z)>10);
+  if(y>=3.2&&y<9&&slope<.5&&rand()<.14&&room&&!besideTrail(I,x,z,2.8)){
+   const h=2.4+2*rand();add('bark',x,y+h*.4,z,.12,h*.8,.12,0x5a4a38);
+   for(let j=0;j<4;j++){const w=(1.25-j*.27)*(.8+rand()*.3);add('cone',x,y+h*(.45+j*.2),z,w,h*.34,w,[0x2c5636,0x35663f,0x2a4f33][j%3])}
+   I.trail.shade(x+.3,z+.3,2.4);continue}
   if(y>1.2&&y<5&&slope<.4&&rand()<.105&&room&&!besideTrail(I,x,z,2.8)){
    const h=1.9+1.5*rand();add('bark',x+.09,y+h*.48,z,.15,h,.13,0x635643,-.09);
    for(let j=0;j<6;j++){
@@ -1217,12 +1093,12 @@ function islandFlora(I,world){
    }
    I.trail.shade(x+.4,z+.35,2.65);continue;
   }
-  patch(y<1||rand()<.38?'gorse':rand()<.52?'daisies':'heather',x,z,6+Math.floor(rand()*7),1.4+rand()*2);
+  patch(y<1||rand()<.38?'gorse':['daisies','heather','poppy','bell'][Math.floor(rand()*4)],x,z,6+Math.floor(rand()*7),1.4+rand()*2);
  }
  const mat=deck.floraMaterial??=new THREE.MeshStandardMaterial({roughness:1,flatShading:true});
  for(const [type,items] of Object.entries(types)){
   if(!items.length)continue;
-  const geo=type==='bark'?new THREE.CylinderGeometry(.7,1,1,6):new THREE.IcosahedronGeometry(1,type==='leaves'?1:0);
+  const geo=type==='cone'?new THREE.ConeGeometry(1,1,7):type==='bark'?new THREE.CylinderGeometry(.7,1,1,6):new THREE.IcosahedronGeometry(1,type==='leaves'?1:0);
   const mesh=new THREE.InstancedMesh(geo,mat,items.length);
   items.forEach(([matrix,color],i)=>{mesh.setMatrixAt(i,matrix);mesh.setColorAt(i,color)});
   mesh.raycast=()=>{};group.add(mesh);
@@ -1346,7 +1222,6 @@ function rebuildDeck(){
  const world=new THREE.Group();
  const {wood,decking,cream,trim,blue,glass}=deck;
  const stone=deck.stone??=cottageStone();
- deck.buoys=[];deck.beacons=[];
  for(const I of ISL){
   const coast=I.ps[0],extent=coast.s*1.53;
   const segments=Math.min(180,Math.ceil(extent/1.22));
@@ -1429,7 +1304,6 @@ function rebuildDeck(){
   box(dock,3.4,1.4,.16,length-5,3.9,-jettyHalfWidth+.4,cream);
 
  }
- buildTackleShop(world);
  for(const {p} of PK){
   const group=new THREE.Group();
   const ground=p.offshore?-.15:meshElevation(p.lx,p.ly);
@@ -1437,56 +1311,13 @@ function rebuildDeck(){
   group.position.set(p.lx,ground,p.ly);world.add(group);
   if(p.offshore){
    const dims=p.dim??realmDimensions(p);
-   if(p.txs<3){
-    // The hull crosses the waterline; the mast and topmark remain visible from the boat.
-    const size=p.older?1.12:1;
-    group.position.y=-.75;
-    const hull=new THREE.Mesh(new THREE.CylinderGeometry(.62*size,.91*size,1.45*size,16),trim);
-    hull.position.y=.12*size;group.add(hull);
-    const waist=new THREE.Mesh(new THREE.CylinderGeometry(.73*size,.69*size,.28*size,16),cream);
-    waist.position.y=.58*size;group.add(waist);
-    const shoulder=new THREE.Mesh(new THREE.ConeGeometry(.57*size,.68*size,16),trim);
-    shoulder.position.y=.91*size;group.add(shoulder);
-    box(group,.13*size,1.62*size,.13*size,0,1.69*size,0,wood);
-    const topmark=new THREE.Mesh(new THREE.SphereGeometry(.24*size,10,8),glass);
-    topmark.position.y=2.57*size;group.add(topmark);
-    const mooring=new THREE.Mesh(new THREE.TorusGeometry(.29*size,.065*size,6,14),wood);
-    mooring.rotation.x=Math.PI/2;mooring.position.set(0,-.65*size,0);group.add(mooring);
-    deck.buoys.push({group,x:p.lx,z:p.ly,phase:(hash(p.path)%628)/100});
-    p.tagHeight=group.position.y+3.5*size;
-   }else if(p.txs>=16){
-    const height=11+dims.height*27,bottom=1.45+dims.width*.065,top=bottom*.69;
-    // Segmented tapered masonry creates the alternating lighthouse bands.
-    for(let i=0;i<6;i++){
-     const y0=i*height/6,y1=(i+1)*height/6;
-     const r0=bottom+(top-bottom)*i/6,r1=bottom+(top-bottom)*(i+1)/6;
-     const band=new THREE.Mesh(new THREE.CylinderGeometry(r1,r0,y1-y0,18),i%2?cream:trim);
-     band.position.y=(y0+y1)/2;group.add(band);
-    }
-    const gallery=new THREE.Mesh(new THREE.CylinderGeometry(top*1.34,top*1.30,.38,18),stone);
-    gallery.position.y=height+.12;group.add(gallery);
-    const lens=new THREE.Mesh(new THREE.CylinderGeometry(top*.70,top*.70,1.55,14),new THREE.MeshStandardMaterial({color:0xffe8ab,emissive:0xffb45c,emissiveIntensity:1.4,roughness:.18,metalness:.18}));
-    lens.position.y=height+1.08;group.add(lens);deck.beacons.push({lens,phase:(hash(p.path)%628)/100});
-    for(let i=0;i<8;i++){
-     const a=i*Math.PI/4,r=top*1.14;
-     box(group,.09,1.25,.09,Math.cos(a)*r,height+1.04,Math.sin(a)*r,stone);
-    }
-    const rail=new THREE.Mesh(new THREE.TorusGeometry(top*1.14,.08,6,28),stone);
-    rail.rotation.x=Math.PI/2;rail.position.y=height+1.67;group.add(rail);
-    const roof=new THREE.Mesh(new THREE.ConeGeometry(top*1.12,1.45,18),trim);
-    roof.position.y=height+2.55;group.add(roof);
-    const finial=new THREE.Mesh(new THREE.SphereGeometry(.20,8,6),glass);
-    finial.position.y=height+3.3;group.add(finial);
-    p.tagHeight=ground+height+4;
-   }else{
-    const width=1.4+dims.width*.18,depth=1.5+dims.depth*.21,height=1.5+dims.height*19;
-    box(group,width,.65,depth,0,.1,0,blue);
-    box(group,width*.52,height,depth*.50,0,.45+height/2,0,p.older?decking:cream);
-    box(group,width*.72,.75,depth*.70,0,height+.75,0,glass);
-    const roof=new THREE.Mesh(new THREE.ConeGeometry(Math.max(width,depth)*.46,1.2,4),trim);
-    roof.position.y=height+1.55;roof.rotation.y=Math.PI/4;group.add(roof);
-    p.tagHeight=ground+height+3.3;
-   }
+   const width=1.4+dims.width*.18,depth=1.5+dims.depth*.21,height=1.5+dims.height*40;
+   box(group,width,.65,depth,0,.1,0,blue);
+   box(group,width*.52,height,depth*.50,0,.45+height/2,0,p.older?decking:cream);
+   box(group,width*.72,.75,depth*.70,0,height+.75,0,glass);
+   const roof=new THREE.Mesh(new THREE.ConeGeometry(Math.max(width,depth)*.46,1.2,4),trim);
+   roof.position.y=height+1.55;roof.rotation.y=Math.PI/4;group.add(roof);
+   p.tagHeight=ground+height+3.3;
   }else{
    const size=p.txs>=3?1.34:1;
    const offsets=buildingsFor(p);
@@ -1538,7 +1369,9 @@ function rebuildDeck(){
   }
  }
  chartSeabed();
+ placeHut();
  for(const island of ISL){plantGrass(island,world);islandFlora(island,world)}
+ addHut(world);addShoals(world);
  deck.scene.add(world);deck.world=world;deck.dirty=false;
 }
 function dockHeight(j,distance){
@@ -1554,6 +1387,251 @@ function sizeDeck(){
  deck.renderer.setSize(cw,ch,false);deck.camera.aspect=cw/Math.max(1,ch);deck.camera.updateProjectionMatrix();
 }
 let tagVector;
+
+/* ---------- fishing hut, rod, shoals, spray ---------- */
+const FISH={defi:['Yield Carp','Vault Bream','Swap Mackerel','Oracle Eel'],games:['Quest Trout','Arcade Pike','Dice Perch','Maze Minnow'],social:['Board Roach','Feed Herring','Chat Sprat'],tools:['Spanner Tench','Paste Gudgeon','Regex Ray'],dao:['Council Cod','Vote Sardine'],nft:['Mint Koi','Gallery Guppy'],infra:['Registry Eel','Faucet Flounder']};
+const FISH_ANY=['Gnomefish','Block Bass','Realm Roach','Atom Anchovy'];
+let fishing=null,fishLog=[],fishText='',fishUntil=0;
+try{fishLog=JSON.parse(localStorage.getItem('gno-ordnance-fish')||'[]');P.rod=localStorage.getItem('gno-ordnance-rod')==='1'}catch(e){}
+function fishMsg(m){fishText=m;fishUntil=performance.now()+6500}
+function fishNote(){
+ if(!P.rod&&!(deck.hut&&deck.active))return '';
+ let n='';
+ if(performance.now()<fishUntil)n+='<br>🎣 '+esc(fishText);
+ else if(!P.rod&&deck.hut)n+='<br>🎣 A fishing hut stands on the '+esc(deck.hut.I.n)+' island.';
+ if(P.rod&&fishLog.length){const best=fishLog.reduce((a,b)=>b.cm>a.cm?b:a);n+='<br><small>Fish log: '+fishLog.length+' caught · biggest '+esc(best.name)+' '+best.cm+' cm</small>'}
+ if(P.rod&&lessonStats.all)n+='<br><small>Go lessons: '+lessonStats.ok+' / '+lessonStats.all+' correct</small>';
+ return n;
+}
+function placeHut(){
+ deck.hut=null;
+ const I=ISL.find(i=>i.n==='games');if(!I)return;
+ const j=JT.find(j=>j.I===I);if(!j)return;
+ const px=-j.dy,pz=j.dx;
+ let best=null;
+ for(const d of [9,12,17,23,30,38,46,55])for(const sd of [0,5,-5,9,-9,14,-14,20,-20,27,-27]){
+  const x=j.x0-j.dx*d+px*sd,z=j.y0-j.dy*d+pz*sd,y=meshElevation(x,z);
+  const sl=Math.hypot(meshElevation(x+2,z)-y,meshElevation(x,z+2)-y)/2;
+  const ok=[[2.6,2.4],[-2.6,2.4],[2.6,-2.4],[-2.6,-2.4]].every(([a,b])=>{const cx=x+j.dx*a+px*b,cz=z+j.dy*a+pz*b;return landOK(cx,cz)&&Math.abs(meshElevation(cx,cz)-y)<1.2});
+  if(y>.15&&sl<.48&&ok&&!houseBlocked(x,z)&&!jettyAt(x,z)){
+   const score=d*.03+Math.abs(sd)*.02+sl*9+Math.max(0,y-5)*2;
+   if(!best||score<best.score)best={x,z,y,fx:j.dx,fz:j.dy,I,score};
+  }
+ }
+ if(best)deck.hut=best;
+}
+function addHut(world){
+ const h=deck.hut;if(!h)return;
+ const g=new THREE.Group();g.position.set(h.x,h.y,h.z);g.rotation.y=-Math.atan2(h.fz,h.fx);
+ const bx=(w,hh,d,x,y,z,m)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,hh,d),m);o.position.set(x,y,z);o.raycast=()=>{};g.add(o);return o};
+ const wd=deck.wood,dk=deck.decking,cr=deck.cream,bl=deck.blue;
+ bx(4.6,.3,4.2,0,.05,0,dk);bx(.25,2.6,4.2,-2.1,1.4,0,wd);bx(4.2,2.6,.25,0,1.4,-2,wd);bx(4.2,2.6,.25,0,1.4,2,wd);
+ for(const [sx,sz] of [[2.2,2],[2.2,-2]])bx(.22,2.8,.22,sx,1.4,sz,cr);
+ bx(5.2,.18,3.0,0,3.05,-1.35,bl).rotation.x=.45;bx(5.2,.18,3.0,0,3.05,1.35,bl).rotation.x=-.45;bx(5.2,.2,.3,0,3.52,0,cr);
+ bx(.3,.1,3,-1.85,1.2,0,dk);bx(.5,.5,.5,-1.5,.45,-1.2,wd);
+ const rod=new THREE.Group(),dark=new THREE.MeshStandardMaterial({color:0x5b3b22,roughness:.7});
+ const stick=new THREE.Mesh(new THREE.CylinderGeometry(.02,.045,3.2,6),dark);stick.position.y=1.6;rod.add(stick);
+ const reel=new THREE.Mesh(new THREE.CylinderGeometry(.1,.1,.08,10),new THREE.MeshStandardMaterial({color:0xc9a24a,metalness:.5,roughness:.4}));reel.position.set(.06,.8,0);reel.rotation.z=Math.PI/2;rod.add(reel);
+ rod.position.set(-1.8,.2,1.1);rod.rotation.z=-.22;rod.traverse(o=>o.raycast=()=>{});g.add(rod);deck.hutRod=rod;
+ const beam=new THREE.Mesh(new THREE.CylinderGeometry(.14,.14,28,8,1,true),new THREE.MeshBasicMaterial({color:0xffd978,transparent:true,opacity:.34,blending:THREE.AdditiveBlending,depthWrite:false}));
+ beam.position.y=15;beam.raycast=()=>{};g.add(beam);deck.hutBeam=beam;
+ rod.visible=beam.visible=!P.rod;world.add(g);
+}
+function addShoals(world){
+ deck.shoals=[];const mat=new THREE.MeshBasicMaterial({color:0x143c4a,transparent:true,opacity:.42,depthWrite:false}),geo=new THREE.SphereGeometry(1,8,6);
+ for(const j of JT){
+  for(let i=0;i<16;i++){const m=new THREE.Mesh(geo,mat);m.scale.set(.75,.12,.22);m.raycast=()=>{};world.add(m);
+   deck.shoals.push({m,cx:j.x1+j.dx*14+(Math.random()-.5)*8,cz:j.y1+j.dy*14+(Math.random()-.5)*8,r:4+Math.random()*7,ph:Math.random()*6.28,sp:(.25+Math.random()*.3)*(Math.random()<.5?-1:1)})}
+ }
+}
+function takeRod(){
+ P.rod=true;try{localStorage.setItem('gno-ordnance-rod','1')}catch(e){}
+ if(deck.hutRod)deck.hutRod.visible=deck.hutBeam.visible=false;
+ fishMsg('You take the rod. Stand on a jetty or in the boat, face open water and press F (or tap Cast).');
+}
+const SPR={n:160,i:0};
+function sprayInit(){
+ SPR.pos=new Float32Array(SPR.n*3).fill(-999);SPR.vel=new Float32Array(SPR.n*3);SPR.life=new Float32Array(SPR.n);
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(SPR.pos,3));
+ SPR.pts=new THREE.Points(g,new THREE.PointsMaterial({color:0xeaf6f6,size:.34,transparent:true,opacity:.85,depthWrite:false}));
+ SPR.pts.frustumCulled=false;SPR.pts.raycast=()=>{};deck.scene.add(SPR.pts);
+}
+function spray(x,y,z,n,up,spread){
+ for(let k=0;k<n;k++){const i=(SPR.i++)%SPR.n,a=i*3;
+  SPR.pos[a]=x+(Math.random()-.5)*.4;SPR.pos[a+1]=y;SPR.pos[a+2]=z+(Math.random()-.5)*.4;
+  SPR.vel[a]=(Math.random()-.5)*spread;SPR.vel[a+1]=up*(.6+Math.random()*.8);SPR.vel[a+2]=(Math.random()-.5)*spread;SPR.life[i]=.7+Math.random()*.5}
+}
+function canFish(){return deck.active&&P.rod&&!P.swim&&(P.boat||!!jettyAt(P.x,P.y))}
+let fishHeld=false,lessonStats={ok:0,all:0};
+try{lessonStats=JSON.parse(localStorage.getItem('gno-ordnance-lessons')||'{"ok":0,"all":0}')}catch(e){}
+function fishAction(){
+ if(!P.rod||!deck.active)return;
+ if(!fishing){castLine();return}
+ if(fishing.state==='wait')reelIn();
+}
+function castLine(){
+ if(!canFish()){fishMsg('Walk onto a jetty or board the boat to fish.');return}
+ let target=null;
+ for(let d=14;d<=26;d+=2){const x=P.x+Math.cos(P.hd)*d,z=P.y+Math.sin(P.hd)*d;if(inW(x,z)&&hF(x,z)[0]<C&&!jettyAt(x,z)){target={x,z};break}}
+ if(!target){fishMsg('Face open water to cast.');return}
+ const near=JT.some(j=>Math.hypot(target.x-j.x1,target.z-j.y1)<45),now=performance.now();
+ fishing={x:target.x,z:target.z,cx:target.x,cz:target.z,state:'wait',px:P.x,py:P.y,bite:now+(near?1800:3000)+Math.random()*(near?4200:6500)};
+ spray(target.x,-.6,target.z,18,3.5,2.2);fishMsg('Line out. Wait for a bite…');
+}
+function reelIn(){fishMsg('Reeled in too soon. Nothing on the hook.');fishing=null}
+function nearestIsland(){return ISL.reduce((a,i)=>!a||Math.hypot(P.x-i.ps[0].lx,P.y-i.ps[0].ly)<Math.hypot(P.x-a.ps[0].lx,P.y-a.ps[0].ly)?i:a,null)}
+function pickFish(){
+ const I=nearestIsland();
+ if(Math.random()<.08)return{junk:true,name:'a waterlogged page of old Gno docs',cm:0,island:I?.n||''};
+ const names=[...(FISH[I?.n]||[]),...FISH_ANY],name=names[Math.floor(Math.random()*names.length)];
+ return{name,cm:Math.round(12+Math.pow(Math.random(),2.2)*78),island:I?.n||''};
+}
+/* a tiny Go lesson: read it, answer it, set the hook */
+const TIPS=[
+ '`:=` makes a new variable and gives it a value. `+` adds numbers. Go line by line: what is a, what is b, then c?',
+ '`*` means multiply. `price := 4` creates a variable called price that holds 4.',
+ '`-` subtracts: take the second number away from the first.',
+ 'With whole numbers, `/` throws away any remainder. You get a whole number, not a decimal.',
+ '`%` gives the remainder: what is left over after dividing as many whole times as possible.',
+ '`len(x)` counts the characters in a string (or the items in a slice).',
+ '`+` between two strings sticks them together end to end. No space is added.',
+ '`>` compares two numbers and gives `true` or `false`.',
+ 'A `for` loop repeats its block. Starting at 0 and stopping before `i < 3` means it runs 3 times. `n += 2` adds 2 to n each time.',
+ 'A slice like `[]int{1, 2, 3}` is a list of ints. `len` counts the items in it.'];
+function makeLesson(){
+ const r=n=>1+Math.floor(Math.random()*n),pick=a=>a[Math.floor(Math.random()*a.length)];
+ const T=[
+  ()=>{const a=r(9),b=r(9);return{code:`a := ${a}\nb := ${b}\nc := a + b`,q:'c is…',ans:String(a+b),bad:[a*b,a+b+1,Math.abs(a-b)],why:`+ adds the two values: ${a} + ${b} = ${a+b}.`}},
+  ()=>{const a=r(6)+2,b=r(6)+2;return{code:`price := ${a}\nqty := ${b}\ntotal := price * qty`,q:'total is…',ans:String(a*b),bad:[a+b,a*b+a,a*b-b],why:`* multiplies: ${a} x ${b} = ${a*b}.`}},
+  ()=>{const a=r(9)+9,b=r(8);return{code:`a := ${a}\nb := ${b}\nc := a - b`,q:'c is…',ans:String(a-b),bad:[a+b,b-a,a-b+2],why:`- subtracts: ${a} - ${b} = ${a-b}.`}},
+  ()=>{const b=r(4)+2,q=r(6)+1,a=b*q+r(b-1);return{code:`x := ${a} / ${b}`,q:'x is… (these are ints)',ans:String(q),bad:[q+1,(a/b).toFixed(1),a%b],why:`Integer division drops the remainder: ${a} / ${b} = ${q}.`}},
+  ()=>{const b=r(4)+2,a=b*(r(5)+1)+r(b-1);return{code:`x := ${a} % ${b}`,q:'x is…',ans:String(a%b),bad:[Math.floor(a/b),a%b+1,b],why:`% is the remainder after dividing: ${a} % ${b} = ${a%b}.`}},
+  ()=>{const w=pick(['realm','gno','crypto','island','jetty']);return{code:`name := "${w}"\nn := len(name)`,q:'n is…',ans:String(w.length),bad:[w.length+1,w.length-1,w.length*2],why:`len counts the characters in "${w}": ${w.length}.`}},
+  ()=>{const a=pick(['gno','realm','atom']),b=pick(['.land','-go','pool']);return{code:`s := "${a}" + "${b}"`,q:'s is…',ans:`"${a+b}"`,bad:[`"${a} ${b}"`,`"${b+a}"`,`"${a}+${b}"`],why:`+ joins strings with no gap: "${a+b}".`}},
+  ()=>{const x=r(9),y=r(9);const ok=x>y;return{code:`x := ${x}\ny := ${y}\nok := x > y`,q:'ok is…',ans:String(ok),bad:[String(!ok),'0','nil'],why:`${x} > ${y} is ${ok}.`}},
+  ()=>{const k=r(4)+2,st=r(3)+1;return{code:`n := 0\nfor i := 0; i < ${k}; i++ {\n\tn += ${st}\n}`,q:'n is…',ans:String(k*st),bad:[(k+1)*st,k+st,k*st-st],why:`The loop runs ${k} times and adds ${st} each time: ${k*st}.`}},
+  ()=>{const n=r(4)+2;const xs=Array.from({length:n},(_, i)=>i+1);return{code:`xs := []int{${xs.join(', ')}}\nn := len(xs)`,q:'n is…',ans:String(n),bad:[n-1,n+1,xs[n-1]*2],why:`The slice holds ${n} items, so len(xs) is ${n}.`}}
+ ];
+ const k=Math.floor(Math.random()*T.length),L=T[k]();L.tip=TIPS[k];
+ const opts=[...new Set(L.bad.map(String).filter(v=>v!==L.ans))].slice(0,2);
+ while(opts.length<2)opts.push(String(parseInt(L.ans)+opts.length+3));
+ L.opts=[L.ans,...opts].sort(()=>Math.random()-.5);return L;
+}
+function startBite(now){
+ const f=fishing;f.state='bite';f.t0=now;f.tries=0;f.fish=pickFish();f.lesson=makeLesson();
+ $('#sk-tip').textContent='Tip: '+f.lesson.tip;$('#sk-code').textContent=f.lesson.code;$('#sk-q').textContent=f.lesson.q;
+ const box=$('#sk-opts');box.innerHTML='';
+ f.lesson.opts.forEach((o,i)=>{const b=document.createElement('button');b.textContent=(i+1)+'  '+o;b.onclick=()=>answerStrike(i);box.appendChild(b)});
+ fishMsg('Bite! Read the tip, then answer to set the hook.');spray(f.x,-.6,f.z,10,2.5,1.5);
+}
+function answerStrike(i){
+ const f=fishing;if(!f||f.state!=='bite')return;
+ const L=f.lesson,right=L.opts[i]===L.ans;f.tries++;
+ if(f.tries===1){lessonStats.all++;if(right)lessonStats.ok++;try{localStorage.setItem('gno-ordnance-lessons',JSON.stringify(lessonStats))}catch(e){}}
+ if(!right){
+  if(f.tries<2){$('#sk-opts').children[i].disabled=true;$('#sk-tip').textContent='Not quite, have another look. Tip: '+L.tip;fishMsg('Not quite. You get one more try.');return}
+  fishMsg('The hook slips. The answer was '+L.ans+'. '+L.why);fishing=null;return}
+ if(f.fish.junk){landFish();return}
+ f.state='fight';f.prog=0;f.ten=.45;f.snap=0;f.slack=0;f.surge=false;f.fightStart=performance.now();f.surgeAt=f.fightStart+3500;f.rate=Math.max(.28,.42*(1-f.fish.cm/240));fishHeld=false;
+ fishMsg('STRIKE! '+L.why+' Hook set. Hold F (or the button) to reel, release when it surges.');
+}
+function loseFish(msg){fishMsg(msg);fishing=null}
+function landFish(){
+ const f=fishing,fi=f.fish;
+ if(fi.junk)fishMsg('You hauled up '+fi.name+'. (junk)');
+ else{
+  fishLog.push({name:fi.name,cm:fi.cm,island:fi.island});try{localStorage.setItem('gno-ordnance-fish',JSON.stringify(fishLog))}catch(e){}
+  fishMsg((fi.cm>=70?'A beauty! ':'Landed ')+fi.name+', '+fi.cm+' cm'+(fi.island?' from the '+fi.island+' waters':'')+'.');
+  deck.fly={t0:performance.now(),x:f.x,z:f.z,big:fi.cm>=70};
+ }
+ spray(f.x,-.6,f.z,30,5,3);fishing=null;
+}
+function updateFish(dt,now,t){
+ const f=fishing;if(!f)return;
+ if(!canFish()||Math.hypot(P.x-f.px,P.y-f.py)>3.5){loseFish('You moved, so the line was reeled in.');return}
+ if(f.state==='wait'){if(now>=f.bite)startBite(now);return}
+ if(f.state==='bite')return;
+ // fight: keep tension in the green zone while the fish surges
+ if(now>f.surgeAt){f.surge=true;f.surgeEnd=now+700+Math.random()*500;f.surgeAt=now+3200+Math.random()*2200}
+ if(f.surge){f.ten+=.30*dt;if(Math.random()<.2)spray(f.x,-.6,f.z,2,2.5,1.2);if(now>f.surgeEnd)f.surge=false}
+ f.ten+=(fishHeld?.24:-.40)*dt;f.ten=Math.max(0,Math.min(1.05,f.ten));
+ const good=f.ten>.22&&f.ten<.86;
+ if(fishHeld&&good)f.prog+=f.rate*dt;else if(f.surge||f.ten<.15)f.prog=Math.max(0,f.prog-.015*dt);
+ f.snap=now-f.fightStart>3000&&f.ten>=1?f.snap+dt:Math.max(0,f.snap-dt*.5);
+ f.slack=now-f.fightStart>3000&&f.ten<.10?f.slack+dt:Math.max(0,f.slack-dt*.5);
+ if(f.snap>1.8){loseFish('Snap! You pulled too hard and the line broke.');return}
+ if(f.slack>4.5){loseFish('The line went slack and the fish shook the hook.');return}
+ if(f.prog>=1){landFish();return}
+ const u=f.prog*.85;
+ f.x=f.cx+(P.x-f.cx)*u+Math.cos(t/420)*(1-f.prog)*2.4;f.z=f.cz+(P.y-f.cz)*u+Math.sin(t/370)*(1-f.prog)*2.4;
+}
+function fishFrame(dt,t){
+ const cam=deck.camera;
+ if(!SPR.pts){sprayInit();deck.scene.add(cam);
+  const m=new THREE.Group(),dark=new THREE.MeshStandardMaterial({color:0x5b3b22,roughness:.7});
+  const hand=new THREE.Mesh(new THREE.CylinderGeometry(.008,.011,.3,6),dark);hand.rotation.x=Math.PI/2;hand.position.z=-.15;
+  const rodm=new THREE.Mesh(new THREE.CylinderGeometry(.003,.008,1.8,6),dark);rodm.rotation.x=Math.PI/2;rodm.position.z=-1.2;
+  m.add(hand,rodm);m.position.set(.32,-.3,-.5);m.rotation.x=.42;m.visible=false;cam.add(m);deck.rodMesh=m;
+  const lg=new THREE.BufferGeometry();lg.setAttribute('position',new THREE.BufferAttribute(new Float32Array(36),3));
+  deck.line=new THREE.Line(lg,new THREE.LineBasicMaterial({color:0xf5f1e6,transparent:true,opacity:.85}));deck.line.frustumCulled=false;deck.line.visible=false;deck.scene.add(deck.line);
+  deck.bobber=new THREE.Mesh(new THREE.SphereGeometry(.2,10,8),new THREE.MeshBasicMaterial({color:0xe2402f}));deck.bobber.visible=false;deck.scene.add(deck.bobber);
+  deck.ring=new THREE.Mesh(new THREE.RingGeometry(.35,.45,24),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.6,side:THREE.DoubleSide,depthWrite:false}));deck.ring.rotation.x=-Math.PI/2;deck.ring.visible=false;deck.scene.add(deck.ring);
+  deck.leap=new THREE.Mesh(new THREE.SphereGeometry(1,10,8),new THREE.MeshStandardMaterial({color:0xc9d6d8,metalness:.4,roughness:.35}));deck.leap.scale.set(.5,.14,.16);deck.leap.visible=false;deck.scene.add(deck.leap);
+ }
+ const now=performance.now(),seaY=(x,z)=>-.75+swellAt(x,z,t/1000).h*.85;
+ deck.rodMesh.visible=!!P.rod&&deck.active&&!P.swim;
+ // fishing state
+ updateFish(dt,now,t);
+ const f=fishing;deck.bobber.visible=deck.line.visible=deck.ring.visible=!!f;
+ if(f){
+  const dip=(f.state==='bite'||f.surge)?-.22*Math.abs(Math.sin(t/85)):0,by=seaY(f.x,f.z)+.06+dip;
+  deck.bobber.position.set(f.x,by,f.z);
+  const k=(t%1800)/1800;deck.ring.position.set(f.x,seaY(f.x,f.z)+.04,f.z);deck.ring.scale.setScalar(1+k*(f.state!=='wait'?5:3));deck.ring.material.opacity=.6*(1-k);
+  const tip=new THREE.Vector3(0,0,-1.95);deck.rodMesh.localToWorld(tip);
+  const arr=deck.line.geometry.attributes.position.array;
+  for(let i=0;i<12;i++){const u=i/11,sag=Math.sin(Math.PI*u)*(.9+(f.state==='bite'?.2*Math.sin(t/60):0));
+   arr[i*3]=tip.x+(f.x-tip.x)*u;arr[i*3+1]=tip.y+(by-tip.y)*u-sag;arr[i*3+2]=tip.z+(f.z-tip.z)*u}
+  deck.line.geometry.attributes.position.needsUpdate=true;
+ }
+ // fish flung from the water when caught
+ const fl=deck.fly;deck.leap.visible=!!fl;
+ if(fl){const u=(now-fl.t0)/900;if(u>=1)deck.fly=null;else{
+  const px=fl.x+(P.x-fl.x)*u,pz=fl.z+(P.y-fl.z)*u;deck.leap.position.set(px,seaY(px,pz)+Math.sin(Math.PI*u)*(2.4+(fl.big?1:0))+1*u*1.2,pz);
+  deck.leap.rotation.set(0,-Math.atan2(P.y-fl.z,P.x-fl.x),Math.cos(u*Math.PI)*.9);deck.leap.scale.setScalar(fl.big?1.5:1).multiply(new THREE.Vector3(.5,.14,.16))}}
+ // random leaping fish out at sea
+ if(!deck.leapAt||now>deck.leapAt){deck.leapAt=now+4000+Math.random()*7000;
+  const a=Math.random()*6.28,d=25+Math.random()*60,x=P.x+Math.cos(a)*d,z=P.y+Math.sin(a)*d;
+  if(inW(x,z)&&hF(x,z)[0]<C&&!jettyAt(x,z)&&!fl)deck.jump={t0:now,x,z,dx:Math.cos(a+1.5),dz:Math.sin(a+1.5)}}
+ const jp=deck.jump;if(jp){const u=(now-jp.t0)/1100;
+  if(u>=1){spray(jp.x+jp.dx*4,-.6,jp.z+jp.dz*4,12,3,1.5);deck.jump=null}
+  else if(!fl){deck.leap.visible=true;const x=jp.x+jp.dx*4*u,z=jp.z+jp.dz*4*u;deck.leap.position.set(x,seaY(x,z)+Math.sin(Math.PI*u)*1.7,z);deck.leap.rotation.set(0,-Math.atan2(jp.dz,jp.dx),Math.cos(u*Math.PI)*.8);deck.leap.scale.set(.5,.14,.16)}}
+ // shoal shadows circling under the jetties
+ if(deck.shoals)for(const s of deck.shoals){const a=s.ph+t/1000*s.sp;s.m.position.set(s.cx+Math.cos(a)*s.r,-1.6,s.cz+Math.sin(a)*s.r);s.m.rotation.y=-(a+(s.sp>0?1.57:-1.57))}
+ // boat bow spray
+ const lb=deck.lb2||{x:B.x,y:B.y},spd=Math.hypot(B.x-lb.x,B.y-lb.y)/Math.max(dt,.001);deck.lb2={x:B.x,y:B.y};
+ if(P.boat&&spd>22){const n=spd>60?3:1;spray(B.x+Math.cos(B.hd)*5.8,-.55+swellAt(B.x,B.y,t/1000).h*.8,B.y+Math.sin(B.hd)*5.8,n,2.2,2.4)}
+ // spray physics
+ for(let i=0;i<SPR.n;i++){if(SPR.life[i]<=0)continue;const a=i*3;SPR.life[i]-=dt;SPR.vel[a+1]-=9*dt;
+  SPR.pos[a]+=SPR.vel[a]*dt;SPR.pos[a+1]+=SPR.vel[a+1]*dt;SPR.pos[a+2]+=SPR.vel[a+2]*dt;
+  if(SPR.life[i]<=0||SPR.pos[a+1]<-.9){SPR.life[i]=0;SPR.pos[a+1]=-999}}
+ SPR.pts.geometry.attributes.position.needsUpdate=true;
+ // cast / reel button
+ const b=$('#fish');
+ if(P.rod&&canFish()){b.style.display='block';
+  b.textContent=!fishing?'🎣 Cast (F)':fishing.state==='wait'?'🎣 Reel in (F)':fishing.state==='bite'?'Answer to strike!':'🎣 Hold to reel (F)';
+  b.style.background=fishing?.state==='fight'?(fishing.surge?'#b5532a':'#2f7d4f'):'#1f5d73'}
+ else b.style.display='none';
+ const sk=$('#strike'),fg=$('#fight');
+ sk.hidden=!(fishing&&fishing.state==='bite');fg.hidden=!(fishing&&fishing.state==='fight');
+ if(!fg.hidden){
+  $('#fg-mark').style.left=Math.min(97,fishing.ten*95)+'%';$('#fg-prog i').style.width=100*fishing.prog+'%';
+  $('#fg-hint').textContent=fishing.surge?'SURGE! Release the reel!':fishing.ten>.86?'Too much tension, ease off':fishing.ten<.22?'Slack. Reel!':'Good. Keep reeling.';
+  deck.rodMesh.rotation.x=.42+.3*fishing.ten;
+ }else if(deck.rodMesh)deck.rodMesh.rotation.x=.42;
+ if(deck.hutBeam&&!P.rod)deck.hutBeam.material.opacity=.26+.12*Math.sin(t/500);
+}
+$('#fish').onclick=fishAction;
+{const fb=$('#fish');fb.addEventListener('pointerdown',()=>{fishHeld=true});['pointerup','pointerleave','pointercancel'].forEach(n=>fb.addEventListener(n,()=>{fishHeld=false}))}
 function drawDeck(dt,t){
  if(deck.dirty)rebuildDeck();
  const {camera,boat,water,farWater,sky,ripples}=deck;
@@ -1591,13 +1669,6 @@ function drawDeck(dt,t){
  ripples.position.x=Math.floor(P.x/320)*320;ripples.position.z=Math.floor(P.y/320)*320;
  deck.sky.material.uniforms.time.value=t/1000;if(deck.landTime)deck.landTime.value=t/1000;
  windClock.value=t/1000;
- for(const buoy of deck.buoys??[]){
-  const wave=swellAt(buoy.x,buoy.z,t/1000);
-  buoy.group.position.y=-.75+wave.h*.8;
-  buoy.group.rotation.z=Math.atan(wave.gx)*.14;
-  buoy.group.rotation.x=-Math.atan(wave.gz)*.14;
- }
- for(const beacon of deck.beacons??[])beacon.lens.material.emissiveIntensity=1.1+.7*(.5+.5*Math.sin(t*.0018+beacon.phase));
  for(const mesh of deck.world.children){
   const coast=mesh.userData.grassCoast;
   if(coast)mesh.visible=Math.hypot(coast.lx-P.x,coast.ly-P.y)<coast.s*1.25+112;
@@ -1608,7 +1679,7 @@ function drawDeck(dt,t){
   const flap=Math.max(0,Math.sin(t*.0007+g.a0));const f=.10+Math.sin(t/1000*g.f+g.a0)*.59*flap;g.wr.rotation.z=f;g.wl.rotation.z=-f}
  {const lb=deck.lb||{x:B.x,y:B.y},spd=Math.hypot(B.x-lb.x,B.y-lb.y)/Math.max(dt,.001);deck.lb={x:B.x,y:B.y};
   const strength=deck.wake.material.uniforms.speed,want=P.boat?Math.min(.96,spd/32):0;strength.value+=(want-strength.value)*Math.min(1,dt*3);deck.wake.visible=strength.value>.01}
- updateFishingVisuals(t);
+ fishFrame(dt,t);
  deck.renderer.render(deck.scene,camera);
  const tag=$('#realm-tag');
  let best=null, distance=175, position;
@@ -1640,9 +1711,7 @@ function pickDeckRealm(clientX,clientY){
  camera.updateMatrixWorld();
  inspectRay.setFromCamera({x,y},camera);
  const hit=inspectRay.intersectObjects([world,boat,water],true).find(hit=>hit.object!==deck.wake);
- let object=hit?.object;
- while(object){if(object.userData.fishingShop)return {fishingShop:true};if(object.userData.realm)return object.userData.realm;object=object.parent;}
- return null;
+ return hit?.object.parent?.userData.realm??null;
 }
 function markerShape(p,scale){
  const size=Math.max(2,3.4/scale);
@@ -1654,7 +1723,6 @@ function pickChartRealm(clientX,clientY){
  const bounds=chartCanvas.getBoundingClientRect();
  const x=(clientX-bounds.left-cw/2)/k+(chartOverview?WW/2:P.x);
  const y=(clientY-bounds.top-ch/2)/k+(chartOverview?WH/2:P.y);
- const shop=tackleLocation();if(shop&&Math.hypot(x-shop.x,y-shop.y)<9/k)return {fishingShop:true};
  let closest=null,distance=9/k;
  for(const {p} of PK){
   const {offsets}=markerShape(p,k);
@@ -1675,23 +1743,12 @@ function draw(t){ctx.setTransform(DPR,0,0,DPR,0,0);ctx.fillStyle=SEA;ctx.fillRec
   ctx.strokeText(I.n.toUpperCase(),x,y);ctx.fillText(I.n.toUpperCase(),x,y);
   if(I.open){ctx.font='bold '+11*u+'px monospace';ctx.fillStyle='#b5532a';ctx.strokeText('OPEN GROUND',x,y+14*u);ctx.fillText('OPEN GROUND',x,y+14*u)}
   if('letterSpacing'in ctx)ctx.letterSpacing='0px'});
- const shop=tackleLocation();if(shop){ctx.fillStyle='#173d42';ctx.fillRect(shop.x-4*u,shop.y-4*u,8*u,8*u);ctx.font=11*u+'px Georgia';ctx.fillText('Tackle shop',shop.x,shop.y-8*u);}
  const nearbyLabels=[];
  PK.forEach(({p})=>{
   const {size,offsets}=markerShape(p,k),picked=p.path===selectedPath;
   if(p.offshore){
-   ctx.strokeStyle='#fff8e6';ctx.lineWidth=u;
-   if(p.txs>=16){
-    ctx.fillStyle=picked?'#a74026':'#a65035';ctx.beginPath();ctx.arc(p.lx,p.ly,size*1.45,0,Math.PI*2);ctx.fill();ctx.stroke();
-    ctx.fillStyle='#f0ddad';ctx.beginPath();ctx.arc(p.lx,p.ly,size*.82,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#ffcf83';ctx.beginPath();ctx.arc(p.lx,p.ly,size*.35,0,Math.PI*2);ctx.fill();
-   }else if(p.txs<3){
-    ctx.fillStyle=picked?'#a74026':'#b5532a';ctx.beginPath();ctx.arc(p.lx,p.ly,size*1.1,0,Math.PI*2);ctx.fill();ctx.stroke();
-    ctx.fillStyle='#fff8e6';ctx.fillRect(p.lx-size*.73,p.ly-size*.12,size*1.46,size*.24);
-    ctx.beginPath();ctx.arc(p.lx,p.ly-size*1.35,size*.26,0,Math.PI*2);ctx.fill();
-   }else{
-    ctx.fillStyle=picked?'#a74026':'#396777';ctx.beginPath();ctx.moveTo(p.lx,p.ly-size*1.4);ctx.lineTo(p.lx+size,p.ly);ctx.lineTo(p.lx,p.ly+size*1.4);ctx.lineTo(p.lx-size,p.ly);ctx.closePath();ctx.fill();ctx.stroke();
-   }
+   ctx.fillStyle=picked?'#a74026':'#396777';ctx.strokeStyle='#fff8e6';ctx.lineWidth=u;
+   ctx.beginPath();ctx.moveTo(p.lx,p.ly-size*1.4);ctx.lineTo(p.lx+size,p.ly);ctx.lineTo(p.lx,p.ly+size*1.4);ctx.lineTo(p.lx-size,p.ly);ctx.closePath();ctx.fill();ctx.stroke();
   }else if(p.txs==null||p.older){
    ctx.strokeStyle='#654330';ctx.lineWidth=u;ctx.setLineDash([2*u,2*u]);ctx.beginPath();ctx.arc(p.lx,p.ly,size,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
   }else{
@@ -1732,7 +1789,7 @@ function draw(t){ctx.setTransform(DPR,0,0,DPR,0,0);ctx.fillStyle=SEA;ctx.fillRec
  ctx.fillStyle='#7a4f2a';ctx.strokeStyle='#3b2f22';ctx.lineWidth=1.2;ctx.beginPath();ctx.ellipse(0,0,14,6,0,0,6.283);ctx.fill();ctx.stroke();
  ctx.fillStyle='#fff8e6';ctx.beginPath();ctx.moveTo(-2,-1);ctx.lineTo(-2,-12);ctx.lineTo(9,-1);ctx.fill();ctx.stroke();ctx.restore();
  ctx.fillStyle='#b5532a';ctx.strokeStyle='#fff8e6';ctx.lineWidth=2*bs;ctx.beginPath();ctx.arc(P.x,P.y,5*bs*.8,0,6.283);ctx.fill();ctx.stroke()}
-let lt=0;function frame(t){const dt=Math.min(.05,(t-lt)/1000||0);lt=t;if(WC){applyPendingChart();step(dt);tickFishing(t);ui();if(deck.active)drawDeck(dt,t);else draw(t)}requestAnimationFrame(frame)}
+let lt=0;function frame(t){const dt=Math.min(.05,(t-lt)/1000||0);lt=t;if(WC){applyPendingChart();step(dt);ui();if(deck.active)drawDeck(dt,t);else draw(t)}requestAnimationFrame(frame)}
 function resize(){cw=wrap.clientWidth;ch=wrap.clientHeight;cv.width=cw*DPR;cv.height=ch*DPR;if(chartOverview&&WW&&WH)k=Math.min(cw/WW,ch/WH)*.94;sizeDeck()}
 addEventListener('resize',resize);
 $('#zi').onclick=()=>{chartOverview=false;k=Math.min(2.5,k*1.3);};
@@ -1740,28 +1797,39 @@ $('#zo').onclick=()=>{chartOverview=false;k=Math.max(.16,k/1.3);};
 $('#zl').onclick=()=>{chartOverview=!chartOverview;k=chartOverview?Math.min(cw/WW,ch/WH)*.94:1;};
 /* ---------- data ---------- */
 function go(rows,ds,source,real,keepPosition=false,all=rows){
- if(!keepPosition){cancelTour();pendingMap=null;if(fishing.point)stopFishing('Line reeled in while changing charts.');}
+ if(!keepPosition){cancelTour();pendingMap=null;}
  pausedStops=null;setup(rows,ds,keepPosition);if(chartOverview)k=Math.min(cw/WW,ch/WH)*.94;catalogueRows=all;
  $('#src').textContent=source;$('#badge').style.display=real?'none':'';
  lastHtml='';renderSearch();
 }
-$('#bF').onclick=()=>$('#cf').click();
-$('#cf').onchange=async e=>{let rows=[],ds=null;
- for(const f of e.target.files){const L=(await f.text()).trim().split('\n'),h=L[0].split(',').map(s=>s.trim());
-  const R=L.slice(1).filter(Boolean).map(l=>{const v=l.split(','),o={};h.forEach((n,i)=>o[n]=(v[i]||'').trim());return o});
-  if(h[0]==='path')rows=R.map(o=>({path:o.path,cat:o.district.toLowerCase(),name:o.name,txs:+o.txs||0,x:+o.x,y:+o.z,last:o.last,offshore:o.location==='sea',callers:o.callers?+o.callers:null,activeBlocks:o.activeBlocks?+o.activeBlocks:null}));
-  else if(h[0]==='name')ds=R.map(o=>({n:o.name.toLowerCase(),x:+o.x,y:+o.z,radius:+o.radius||undefined}))}
- if(!rows.length&&!ds?.length)return;
+function snapshotCSV(csv){
+ const L=csv.trim().split(/\r?\n/),h=L[0].split(',').map(s=>s.trim());
+ const R=L.slice(1).filter(Boolean).map(l=>{const v=l.split(','),o={};h.forEach((n,i)=>o[n]=(v[i]||'').trim());return o});
+ if(h[0]==='path')return {rows:R.map(o=>({path:o.path,cat:o.district.toLowerCase(),name:o.name,txs:+o.txs||0,x:+o.x,y:+o.z,last:o.last,offshore:o.location==='sea',callers:o.callers?+o.callers:null,activeBlocks:o.activeBlocks?+o.activeBlocks:null}))};
+ if(h[0]==='name')return {ds:R.map(o=>({n:o.name.toLowerCase(),x:+o.x,y:+o.z,radius:+o.radius||undefined}))};
+ throw new Error('Expected an Ordnance data/plots or data/districts CSV.');
+}
+function showSnapshot(rows,ds,note){
+ if(!rows.length&&!ds?.length)throw new Error('The Onyx snapshot contains no districts or realms.');
  stopLive();activeMode='csv';liveWeb='https://onyx.testnets.gno.land';$('#live-state').textContent='Imported snapshot';
  if(!ds){const m={};rows.forEach(r=>(m[r.cat]=m[r.cat]||[]).push(r));ds=Object.entries(m).map(([n,a])=>({n,x:a.reduce((s,r)=>s+r.x,0)/a.length,y:a.reduce((s,r)=>s+r.y,0)/a.length}))}
- go(rows,ds,'Onyx snapshot · '+rows.length+' realms · '+ds.length+' districts'+(e.target.files.length<2?' (load data/districts too for empty districts)':''),1)};
+ go(rows,ds,'Onyx snapshot · '+rows.length+' realms · '+ds.length+' districts'+note,1);
+}
+$('#bF').onclick=()=>$('#cf').click();
+$('#cf').onchange=async e=>{
+ try{
+  let rows=[],ds=null;
+  for(const f of e.target.files){const part=snapshotCSV(await f.text());if(part.rows)rows=part.rows;if(part.ds)ds=part.ds;}
+  showSnapshot(rows,ds,e.target.files.length<2?' (load data/districts too for empty districts)':'');
+ }catch(err){$('#live-state').textContent=err.message}finally{e.target.value=''}
+};
 const networks={
   onyx:{name:'Onyx',id:'onyx-1',rpc:'https://rpc.onyx.testnets.gno.land',web:'https://onyx.testnets.gno.land'},
   mainnet:{name:'Mainnet',id:'gnoland-1',rpc:'https://rpc.gno.land',web:'https://gno.land'}
 };
 let network=networks.mainnet;
-async function rpcResult(method,params,signal){
-  const endpoint=new URL('/'+method,network.rpc);
+async function rpcResult(method,params,signal,target=network){
+  const endpoint=new URL('/'+method,target.rpc);
   endpoint.search=new URLSearchParams(params);
   for(let attempt=0;attempt<2;attempt++){
     const response=await fetch(endpoint,{signal});
@@ -1769,20 +1837,32 @@ async function rpcResult(method,params,signal){
       await new Promise(resolve=>setTimeout(resolve,450));
       continue;
     }
-    if(!response.ok)throw new Error(network.name+' RPC returned HTTP '+response.status+'.');
+    if(!response.ok)throw new Error(target.name+' RPC returned HTTP '+response.status+'.');
     const payload=await response.json();
     if(!payload.result||payload.error)throw new Error(payload.error?.message||'The network returned no result.');
     return payload.result;
   }
 }
-async function abci(path,data,signal){
+async function abci(path,data,signal,target=network){
   const hex=Array.from(new TextEncoder().encode(data),byte=>byte.toString(16).padStart(2,'0')).join('');
-  const result=(await rpcResult('abci_query',{path:JSON.stringify(path),data:'0x'+hex},signal)).response;
+  const result=(await rpcResult('abci_query',{path:JSON.stringify(path),data:'0x'+hex},signal,target)).response;
   const body=result?.ResponseBase??result;
-  if(body?.Log?.includes('package not found'))throw new Error('Onyx has not enabled the Ordnance snapshot realm.');
-  if(!body||body.Error)throw new Error('The network returned no readable data.');
+  if(body?.Log?.includes('package not found'))throw new Error('Onyx has not enabled the Realm Ordnance package yet.');
+  if(!body||body.Error||body.Code>0)throw new Error(body?.Log||'The network returned no readable data.');
   return new TextDecoder().decode(Uint8Array.from(atob(body.Data??''),c=>c.charCodeAt(0)));
 }
+const onyxRealm='gno.land/r/g19j4y5lzwkcuguf8a95pjueuhn7ay58gm0y3wen/realmordnance';
+$('#bOnyx').onclick=async()=>{
+ const button=$('#bOnyx');button.disabled=true;$('#live-state').textContent='Reading Onyx realm…';
+ try{
+  const [d,p]=await Promise.all(['data/districts','data/plots'].map(route=>abci('vm/qrender',onyxRealm+':'+route,undefined,networks.onyx)));
+  const ds=snapshotCSV(d).ds,rows=snapshotCSV(p).rows;
+  if(!ds?.length)throw new Error('The Onyx realm has no published snapshot yet.');
+  showSnapshot(rows,ds,' · on-chain realm');
+  $('#live-state').textContent='Onyx realm snapshot loaded';
+ }catch(err){$('#live-state').textContent='Onyx realm: '+err.message}
+ finally{button.disabled=false}
+};
 const categoryRules=[
   ['games',/(?:^|[^a-z])(?:games?|arena|akkadia|chess|mahjong|2048|tictactoe|sudoku|rpg|gnogame|gnometavern|gamehub|arcade|quests?)(?:[^a-z]|$)/i],
   ['defi',/(?:^|[^a-z])(?:defi|gnoswap|swaps?|dex|staking|staker|lending|liquidity|vaults?|amm|dca)(?:[^a-z]|$)/i],
@@ -1987,6 +2067,8 @@ function mapRecords(paths,window){
  const locations=[[-385,-340],[375,-315],[-425,370],[385,360],[0,1000]];
  for(const [i,n] of liveCategories.entries()){
   const active=all.filter(p=>p.cat===n&&p.txs>0).sort((a,b)=>b.txs-a.txs||a.path.localeCompare(b.path));
+  // Keep Games navigable even when no Games realm was called in this window.
+  // The jetty and tackle shop are part of the archipelago, not a fake realm.
   if(!active.length&&n!=='games')continue;
   const extras=active.length<3?all.filter(p=>p.cat===n&&!p.txs&&p.olderBlock)
    .sort((a,b)=>b.olderBlock-a.olderBlock||a.path.localeCompare(b.path)).slice(0,2)
@@ -2002,7 +2084,7 @@ function mapRecords(paths,window){
 let pendingMap=null;
 const pendingChartNote=' · terrain update at a jetty';
 function readyForChart(districts){
- if(fishing.stage==='waiting'||fishing.stage==='bite'||!$('#fishing-panel').hidden||P.boat||P.swim||drag||ptr||walkKeys.some(key=>keys[key]))return false;
+ if(P.boat||P.swim||drag||ptr||walkKeys.some(key=>keys[key]))return false;
  const dock=jettyAt(P.x,P.y);
  if(!dock)return false;
  return activeMode!==network.id||districts.some(d=>d.n===dock.I.n);
@@ -2107,20 +2189,23 @@ $('#network').addEventListener('change',startLive);
 $('#blocks').addEventListener('change',startLive);
 
 async function refreshApproval(){
- const address="gno.land/r/g19j4y5lzwkcuguf8a95pjueuhn7ay58gm0y3wen/ordnance";
+ const address=onyxRealm;
  const hex=Array.from(new TextEncoder().encode(address),c=>c.toString(16).padStart(2,'0')).join('');
  const params=new URLSearchParams({path:JSON.stringify('vm/qpkgmeta_json'),data:'0x'+hex});
  const node=$('#pkg-state');
  try{
   const res=await fetch(networks.onyx.rpc+'/abci_query?'+params);
-  if(!res.ok)return;
-  const data=(await res.json()).result.response.ResponseBase.Data;
+  if(!res.ok)throw new Error('Status unavailable');
+  const response=(await res.json()).result?.response;
+  const body=response?.ResponseBase??response;
+  if(!body?.Data)throw new Error('Status unavailable');
+  const data=body.Data;
   const meta=JSON.parse(atob(data));
-  if(meta.status==='inert')node.textContent='Onyx realm awaiting package approval';
+  if(meta.status==='inert')node.textContent='Onyx package in automatic review';
   else if(meta.status==='live'||meta.status==='active'){
    const a=document.createElement('a');a.href=networks.onyx.web+'/'+address.slice(9);a.textContent='Open the Onyx realm';node.replaceChildren(a);
-  }
- }catch{}
+  }else node.textContent='Onyx package: '+(meta.status||'status unknown');
+ }catch{node.textContent='Onyx package status unavailable'}
 }
 if(typeof location!=='undefined'){
  if(new URLSearchParams(location.search).get('network')==='onyx')$('#network').value='onyx';
