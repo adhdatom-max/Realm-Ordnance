@@ -7,7 +7,6 @@
 body{margin:0;background:var(--paper);color:var(--ink);font:14px Georgia,serif}
 header{padding:10px 14px 2px}
 h1{margin:0;font-size:19px;letter-spacing:.08em;text-transform:uppercase}
-#badge{margin-left:8px;padding:1px 7px;border:2px solid var(--acc);color:var(--acc);font:bold 11px monospace;letter-spacing:0;vertical-align:middle}
 #src{font:11px monospace;margin-top:2px;opacity:.85}
 button{font:inherit;border:2px solid var(--ink);background:#fff8e6;color:var(--ink);cursor:pointer}
 .bar{display:flex;gap:5px;padding:6px 14px}.bar button{font-size:11px;padding:3px 8px}
@@ -53,10 +52,13 @@ canvas{position:absolute;left:0;top:0;width:100%;height:100%}
 #inspect a{color:var(--acc)}
 #close-inspect{position:absolute;right:7px;top:7px;font-size:17px;padding:0 6px}
 @media (pointer:coarse){#wrap.in-deck #inspect{bottom:98px}}
+#minimap{position:absolute;z-index:2;left:auto;right:8px;top:98px;width:150px;height:150px;border:3px double var(--ink);background:var(--sea);pointer-events:none}
+#minimap[hidden]{display:none}
+@media (max-width:600px){#minimap{width:112px;height:112px}}
 </style></head><body>
-<header><h1>Realm Ordnance<span id="badge">SYNTHETIC DEMO</span></h1><div id="src"></div></header>
+<header><h1>Realm Ordnance</h1><div id="src"></div></header>
 <div class="bar"><select id="network" aria-label="Network"><option value="mainnet">Mainnet</option><option value="onyx">Onyx testnet</option></select><select id="blocks" aria-label="Activity window"><option value="1200">1,200 blocks</option><option value="2400">2,400 blocks</option><option value="5000" selected>5,000 blocks</option></select><button id="live" type="button">Pause live</button><input id="search" type="search" placeholder="Search realms" aria-label="Search realms"><span id="live-state" role="status"></span><button id="bOnyx" type="button">Load Onyx realm</button><button id="bF" type="button">Load Onyx CSVs</button><input id="cf" type="file" accept=".csv,.txt" multiple hidden></div><div id="search-results"></div>
-<div id="wrap"><canvas id="c" aria-label="Archipelago chart"></canvas><canvas id="deck" aria-label="First-person archipelago" hidden></canvas><div id="nav" hidden><strong id="heading"></strong><small id="journey"></small></div><div id="realm-tag" hidden></div><div class="ctl"><button id="view" type="button">First person</button><button id="tour" type="button" hidden>Auto Tour</button><button id="zi">+</button><button id="zo">−</button><button id="zl" title="Fit archipelago">Fit</button></div><button id="act" type="button"></button><button id="fish" type="button" hidden></button><div id="strike" hidden><b>Fish on! Take your time. Read the tip, work it out, pick an answer (1 / 2 / 3).</b><div id="sk-tip"></div><pre id="sk-code"></pre><div id="sk-q"></div><div id="sk-opts"></div></div><div id="fight" hidden><div id="fg-hint"></div><div id="fg-ten"><span id="fg-zone"></span><i id="fg-mark"></i></div><div id="fg-prog"><i></i></div></div><aside id="inspect" aria-label="Realm details" hidden><button id="close-inspect" type="button" aria-label="Close realm details">×</button><div id="inspect-body" aria-live="polite"></div></aside><div id="helm" hidden aria-label="Movement controls"><span></span><button data-key="w" aria-label="Forward">↑</button><span></span><button data-key="a" aria-label="Left">←</button><button data-key="s" aria-label="Reverse">↓</button><button data-key="d" aria-label="Right">→</button></div></div>
+<div id="wrap"><canvas id="c" aria-label="Archipelago chart"></canvas><canvas id="deck" aria-label="First-person archipelago" hidden></canvas><div id="nav" hidden><strong id="heading"></strong><small id="journey"></small></div><div id="realm-tag" hidden></div><canvas id="minimap" aria-label="Sailing chart" hidden></canvas><div class="ctl"><button id="view" type="button">First person</button><button id="tour" type="button" hidden>Auto Tour</button><button id="zi">+</button><button id="zo">−</button><button id="zl" title="Fit archipelago">Fit</button></div><button id="act" type="button"></button><button id="fish" type="button" hidden></button><div id="strike" hidden><b>Fish on! Take your time. Read the tip, work it out, pick an answer (1 / 2 / 3).</b><div id="sk-tip"></div><pre id="sk-code"></pre><div id="sk-q"></div><div id="sk-opts"></div></div><div id="fight" hidden><div id="fg-hint"></div><div id="fg-ten"><span id="fg-zone"></span><i id="fg-mark"></i></div><div id="fg-prog"><i></i></div></div><aside id="inspect" aria-label="Realm details" hidden><button id="close-inspect" type="button" aria-label="Close realm details">×</button><div id="inspect-body" aria-live="polite"></div></aside><div id="helm" hidden aria-label="Movement controls"><span></span><button data-key="w" aria-label="Forward">↑</button><span></span><button data-key="a" aria-label="Left">←</button><button data-key="s" aria-label="Reverse">↓</button><button data-key="d" aria-label="Right">→</button></div></div>
 <div id="info"></div>
 <div id="key"><b>Key:</b> one island per category · island area follows charted realm count · height: successful call transactions · width: distinct callers · footprint: active blocks · Older sightings and offshore realms are marked · WASD or arrows to move · drag to look · click a building to inspect · E to board or land · Auto Tour is available aboard.</div>
 <footer style="margin:10px 0"><a href="https://rpc.onyx.testnets.gno.land/tx?hash=0x8bbe26bee716d1b83627d648d4562a217c95d191f7af4d0653e07441062f1130" target="_blank" rel="noopener">Onyx package transaction</a> · <span id="pkg-state">Checking Onyx package status…</span></footer>
@@ -73,21 +75,12 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
 const C=.06,$=s=>document.querySelector(s),cv=$('#c'),ctx=cv.getContext('2d'),wrap=$('#wrap'),SEA='#cfe3ea';
 let chartOverview=false;
 let DPR=Math.min(2,devicePixelRatio||1),cw=0,ch=0,k=1,ISL=[],PK=[],JT=[],WC,WW=0,WH=0;
-let originX=0,originY=0, catalogueRows=[], selectedPath='', liveWeb='https://gno.land', activeMode='demo';
+let originX=0,originY=0, catalogueRows=[], selectedPath='', liveWeb='https://gno.land', activeMode='loading';
 const focus=()=>catalogueRows.find(r=>r.path===selectedPath);
 const P={x:0,y:0,boat:false,hd:0},B={x:0,y:0,hd:0};
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function rng(s){let t=s>>>0;const f=()=>(t=(t*1664525+1013904223)%4294967296)/4294967296;for(let i=0;i<6;i++)f();return f}
 function hash(s){let h=2166136261;for(const c of s){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
-/* ---------- synthetic demo snapshot ---------- */
-function demo(){
- const cats={defi:'swap pool vault lend stake bridge perps oracle yield',social:'boards chat feed profiles forum polls dm',dao:'govdao treasury grants votes council guild',tools:'urlshort paste calc regex clock mdbook',nft:'gnoplates mint gallery drops badges',infra:'registry names faucet users indexer',education:'tutorial gnogo quiz docs',games:'chess maze',identity:''},
- r=rng(77),nm=Object.keys(cats),rows=[],ds=[];
- nm.forEach((c,i)=>{const a=i/nm.length*6.283-1.57,cx=Math.cos(a)*1300,cy=Math.sin(a)*800;ds.push({n:c,x:cx,y:cy});
-  const L=cats[c].split(' ').filter(Boolean).map(m=>({m,t:Math.round(10**(1.2+r()*2.6)*(c==='defi'?4:c==='social'?2.5:1))})).sort((a,b)=>b.t-a.t);
-  L.forEach((q,j)=>{const an=j*2.4+i,rd=L.length>1?Math.sqrt(j/(L.length-1))*135:0;
-   rows.push({path:'gno.land/r/demo/'+c+'_'+q.m,cat:c,name:q.m,txs:q.t,callers:Math.max(1,Math.floor(Math.sqrt(q.t)/4)),activeBlocks:Math.max(1,Math.ceil(q.t/5)),x:cx+Math.cos(an)*rd,y:cy+Math.sin(an)*rd*.8,last:Math.ceil(q.t/9)+' txs this week, last call '+(1+Math.floor(r()*47))+'h ago'})})});
- return{rows,ds}}
 /* ---------- terrain ---------- */
 function setup(rows,ds,keepPosition=false){
  const dock=keepPosition&&!P.boat?jettyAt(P.x,P.y):null;
@@ -99,14 +92,14 @@ function setup(rows,ds,keepPosition=false){
 
  let a=1e9,b=-1e9,c=1e9,e=-1e9;
  ISL=ds.map(d=>{
-  const records=rows.filter(r=>r.cat===d.n);
+  const records=rows.filter(r=>r.cat===d.n&&!r.genesis===!d.genesis);
   const empty=!records.length;
   const landSize=d.radius??(54+17*Math.sqrt(new Set(records.map(r=>r.group??r.path)).size));
   const ps=placeRealms(records,d,landSize);
   const coast={ghost:1,x:d.x,y:d.y,s:landSize};
   const margin=landSize*2.55+110;
   a=Math.min(a,d.x-margin);b=Math.max(b,d.x+margin);c=Math.min(c,d.y-margin);e=Math.max(e,d.y+margin);
-  return{n:d.n,ps:[coast,...ps],open:records.length<=2,empty,seed:hash(d.n)};
+  return{n:d.n,ps:[coast,...ps],open:!d.genesis&&records.length<=2,empty,seed:hash(d.n),genesis:!!d.genesis};
  });
  WW=Math.ceil(b-a);WH=Math.ceil(e-c);originX=a;originY=c;
  ISL.forEach(I=>{I.ps.forEach(p=>{p.x-=a;p.y-=c});mk(I)});
@@ -142,7 +135,7 @@ function setup(rows,ds,keepPosition=false){
 // Active realms get separate hill sites. Quiet or unmeasured realms occupy a coastal band.
 function placeRealms(records,centre,radius){
  const active=records.filter(p=>p.txs>0&&!p.offshore).sort((a,b)=>b.txs-a.txs||a.path.localeCompare(b.path));
- const quiet=records.filter(p=>!(p.txs>0)&&!p.offshore).sort((a,b)=>a.path.localeCompare(b.path));
+ const quiet=records.filter(p=>!(p.txs>0)&&!p.offshore&&!p.genesis).sort((a,b)=>a.path.localeCompare(b.path));
  const turn=Math.PI*(3-Math.sqrt(5)), bearing=(hash(centre.n)%6283)/1000, scatter=rng(hash(centre.n+' settlements'));
  const summits=active.map((p,i)=>{
   const angle=bearing+turn*i,distance=i===0?0:radius*.66*Math.sqrt(i/Math.max(1,active.length-1));
@@ -164,7 +157,7 @@ function placeRealms(records,centre,radius){
   const distance=radius*(.865+.14*scatter());
   return {...p,x:centre.x+Math.cos(angle)*distance,y:centre.y+Math.sin(angle)*distance,H:0,s:18,h:0};
  });
- return [...summits,...plots,...records.filter(p=>p.offshore).map(p=>({...p,x:centre.x,y:centre.y,H:0,s:18,h:0}))];
+ return [...summits,...plots,...records.filter(p=>p.offshore||p.genesis).map(p=>({...p,x:centre.x,y:centre.y,H:0,s:18,h:0}))];
 }
 function chartNoise(seed){
  const random=rng(seed),size=32,values=Float32Array.from({length:size*size},random);
@@ -223,7 +216,7 @@ function mk(I){
   return base;
  };
  for(const plot of I.ps){
-  if(!plot.ghost&&!(plot.txs>0)&&!plot.offshore){
+  if(!plot.ghost&&!(plot.txs>0)&&!plot.offshore&&!plot.genesis){
    const dx=plot.x-coast.x,dy=plot.y-coast.y,distance=Math.hypot(dx,dy);
    const edge=coastShape(dx,dy,Math.atan2(dy,dx));
    const safeDistance=Math.max(coast.s*.897,Math.min(distance,edge*.95));
@@ -236,7 +229,7 @@ function mk(I){
  I.by0=Math.max(0,coast.y-margin);I.by1=Math.min(WH,coast.y+margin);
 }
 function jetties(){JT=[];const cx=WW/2,cy=WH/2;
- ISL.forEach(I=>{const t=I.ps[0];let dx=cx-t.lx,dy=cy-t.ly;if(!dx&&!dy)dx=1;const m=Math.hypot(dx,dy);dx/=m;dy/=m;
+ ISL.forEach(I=>{const t=I.ps[0];let dx=I.genesis?0:cx-t.lx,dy=I.genesis?1:cy-t.ly;if(!dx&&!dy)dx=1;const m=Math.hypot(dx,dy);dx/=m;dy/=m;
   let x=t.lx,y=t.ly,n=0;while(I.F(x,y)>=C&&n++<500){x+=dx*3;y+=dy*3}
   const j={I,dx,dy,x0:x-dx*18,y0:y-dy*18,x1:x+dx*60,y1:y+dy*60};j.length=Math.hypot(j.x1-j.x0,j.y1-j.y0);j.bx=j.x1-dy*22;j.by=j.y1+dx*22;I.jt=j;JT.push(j)})}
 function seg(x,y,j){const vx=j.x1-j.x0,vy=j.y1-j.y0,t=Math.max(0,Math.min(1,((x-j.x0)*vx+(y-j.y0)*vy)/(vx*vx+vy*vy)));return Math.hypot(x-j.x0-vx*t,y-j.y0-vy*t)}
@@ -424,7 +417,7 @@ function nextStop(){
  Object.assign(tour,{route,point:0,wait:0,arrived:false,speed:0});
 }
 function toggleTour(){
- if(!P.boat)return;
+ if(!P.boat||!JT.length)return;
  if(tour){cancelTour('You have the helm');return;}
  tourMessage='';
  tour={stops:pausedStops??tourStops(),index:-1,route:[],point:0,wait:0,arrived:false};
@@ -618,6 +611,7 @@ function building(p){
  return p.txs==null?'Survey marker':settlement(p);
 }
 function realmInfo(p){
+ if(p.genesis)return genesisHtml(p);
  const reading=p.liveReading??p;
  const txs=reading.txs==null?'Activity unavailable':reading.txs+' calls';
  const measures=reading.callers==null?'':' · '+reading.callers+' callers · '+reading.activeBlocks+' active blocks';
@@ -645,7 +639,7 @@ function ui(){
   cur=footJetty&&gap(P,B)<34?{act:'board',t:'Board the boat'}:null;
   if(!P.rod&&deck.hut&&!P.swim&&Math.hypot(P.x-deck.hut.x,P.y-deck.hut.z)<6.5)cur={act:'rod',t:'Take the fishing rod'};
   if(footJetty)h='<b>'+esc(footJetty.I.n)+' jetty</b> · Walk to the end of the jetty to board.';
-  else if(I)h='<b>'+esc(I.n)+' island</b> · '+(I.ps.length-1)+' charted realms · Click a building to inspect its realm.';
+   else if(I)h=I.genesis?'<b>Genesis island</b> · Block 1 of '+esc(genesisNetName(I.ps[1]))+' · Click the marker to inspect it.':'<b>'+esc(I.n)+' island</b> · '+(I.ps.length-1)+' charted realms · Click a building to inspect its realm.';
   if(P.swim){
    const cj=JT.find(j=>{const a=alongJetty(j,P.x,P.y),c=Math.abs((P.y-j.y0)*j.dx-(P.x-j.x0)*j.dy);return a>=-2&&a<=j.length+2&&c<=jettyHalfWidth+3.4});
    cur=gap(P,B)<22?{act:'board',t:'Climb into the boat'}:cj?{act:'climb',j:cj,t:'Climb onto the jetty'}:null;
@@ -1274,9 +1268,9 @@ function rebuildDeck(){
 
      }`)};
    return m})());
-  island.userData.trailMap=I.trail.map;island.position.set(coast.lx,0,coast.ly);world.add(island);
+  island.userData.trailMap=I.trail.map;island.userData.isle=I;island.position.set(coast.lx,0,coast.ly);world.add(island);
   const j=I.jt,length=j.length,dock=new THREE.Group();
-  dock.position.set(j.x0,0,j.y0);dock.rotation.y=-Math.atan2(j.dy,j.dx);world.add(dock);
+  dock.position.set(j.x0,0,j.y0);dock.rotation.y=-Math.atan2(j.dy,j.dx);dock.userData.isle=I;world.add(dock);
   const startHeight=Math.max(1.12,meshElevation(j.x0,j.y0)+.18);
   j.ramp={startHeight,distance:Math.min(27,length)};
   layJettyBoards(dock,j);
@@ -1304,11 +1298,16 @@ function rebuildDeck(){
   box(dock,3.4,1.4,.16,length-5,3.9,-jettyHalfWidth+.4,cream);
 
  }
- for(const {p} of PK){
+ for(const {p,I} of PK){
   const group=new THREE.Group();
   const ground=p.offshore?-.15:meshElevation(p.lx,p.ly);
-  group.userData.realm=p;
+  group.userData.realm=p;group.userData.isle=I;
   group.position.set(p.lx,ground,p.ly);world.add(group);
+  if(p.genesis){
+   // A single stone marker for block 1 at the heart of the archipelago.
+   box(group,1.5,.35,1.5,0,.05,0,stone);box(group,.9,2.7,.9,0,1.55,0,stone);box(group,1.15,.22,1.15,0,3,0,cream);
+   p.tagHeight=ground+4.6;continue;
+  }
   if(p.offshore){
    const dims=p.dim??realmDimensions(p);
    const width=1.4+dims.width*.18,depth=1.5+dims.depth*.21,height=1.5+dims.height*40;
@@ -1370,8 +1369,9 @@ function rebuildDeck(){
  }
  chartSeabed();
  placeHut();
- for(const island of ISL){plantGrass(island,world);islandFlora(island,world)}
+ for(const island of ISL){plantGrass(island,world);world.children.at(-1).userData.isle=island;islandFlora(island,world);world.children.at(-1).userData.isle=island}
  addHut(world);addShoals(world);
+ for(const child of world.children)child.userData.baseY=child.position.y;
  deck.scene.add(world);deck.world=world;deck.dirty=false;
 }
 function dockHeight(j,distance){
@@ -1392,7 +1392,9 @@ let tagVector;
 const FISH={defi:['Yield Carp','Vault Bream','Swap Mackerel','Oracle Eel'],games:['Quest Trout','Arcade Pike','Dice Perch','Maze Minnow'],social:['Board Roach','Feed Herring','Chat Sprat'],tools:['Spanner Tench','Paste Gudgeon','Regex Ray'],dao:['Council Cod','Vote Sardine'],nft:['Mint Koi','Gallery Guppy'],infra:['Registry Eel','Faucet Flounder']};
 const FISH_ANY=['Gnomefish','Block Bass','Realm Roach','Atom Anchovy'];
 let fishing=null,fishLog=[],fishText='',fishUntil=0;
-try{fishLog=JSON.parse(localStorage.getItem('gno-ordnance-fish')||'[]');P.rod=localStorage.getItem('gno-ordnance-rod')==='1'}catch(e){}
+// Saved under realm-ordnance-*; older gno-ordnance-* values are copied across once so catches survive.
+function storeGet(name){try{let v=localStorage.getItem('realm-ordnance-'+name);if(v==null){const old=localStorage.getItem('gno-ordnance-'+name);if(old!=null){localStorage.setItem('realm-ordnance-'+name,old);v=old}}return v}catch(e){return null}}
+try{fishLog=JSON.parse(storeGet('fish')||'[]');P.rod=storeGet('rod')==='1'}catch(e){}
 function fishMsg(m){fishText=m;fishUntil=performance.now()+6500}
 function fishNote(){
  if(!P.rod&&!(deck.hut&&deck.active))return '';
@@ -1435,17 +1437,17 @@ function addHut(world){
  rod.position.set(-1.8,.2,1.1);rod.rotation.z=-.22;rod.traverse(o=>o.raycast=()=>{});g.add(rod);deck.hutRod=rod;
  const beam=new THREE.Mesh(new THREE.CylinderGeometry(.14,.14,28,8,1,true),new THREE.MeshBasicMaterial({color:0xffd978,transparent:true,opacity:.34,blending:THREE.AdditiveBlending,depthWrite:false}));
  beam.position.y=15;beam.raycast=()=>{};g.add(beam);deck.hutBeam=beam;
- rod.visible=beam.visible=!P.rod;world.add(g);
+  rod.visible=beam.visible=!P.rod;g.userData.isle=h.I;world.add(g);
 }
 function addShoals(world){
  deck.shoals=[];const mat=new THREE.MeshBasicMaterial({color:0x143c4a,transparent:true,opacity:.42,depthWrite:false}),geo=new THREE.SphereGeometry(1,8,6);
  for(const j of JT){
-  for(let i=0;i<16;i++){const m=new THREE.Mesh(geo,mat);m.scale.set(.75,.12,.22);m.raycast=()=>{};world.add(m);
-   deck.shoals.push({m,cx:j.x1+j.dx*14+(Math.random()-.5)*8,cz:j.y1+j.dy*14+(Math.random()-.5)*8,r:4+Math.random()*7,ph:Math.random()*6.28,sp:(.25+Math.random()*.3)*(Math.random()<.5?-1:1)})}
+   for(let i=0;i<16;i++){const m=new THREE.Mesh(geo,mat);m.scale.set(.75,.12,.22);m.raycast=()=>{};world.add(m);
+    deck.shoals.push({m,I:j.I,cx:j.x1+j.dx*14+(Math.random()-.5)*8,cz:j.y1+j.dy*14+(Math.random()-.5)*8,r:4+Math.random()*7,ph:Math.random()*6.28,sp:(.25+Math.random()*.3)*(Math.random()<.5?-1:1)})}
  }
 }
 function takeRod(){
- P.rod=true;try{localStorage.setItem('gno-ordnance-rod','1')}catch(e){}
+ P.rod=true;try{localStorage.setItem('realm-ordnance-rod','1')}catch(e){}
  if(deck.hutRod)deck.hutRod.visible=deck.hutBeam.visible=false;
  fishMsg('You take the rod. Stand on a jetty or in the boat, face open water and press F (or tap Cast).');
 }
@@ -1463,7 +1465,7 @@ function spray(x,y,z,n,up,spread){
 }
 function canFish(){return deck.active&&P.rod&&!P.swim&&(P.boat||!!jettyAt(P.x,P.y))}
 let fishHeld=false,lessonStats={ok:0,all:0};
-try{lessonStats=JSON.parse(localStorage.getItem('gno-ordnance-lessons')||'{"ok":0,"all":0}')}catch(e){}
+try{lessonStats=JSON.parse(storeGet('lessons')||'{"ok":0,"all":0}')}catch(e){}
 function fishAction(){
  if(!P.rod||!deck.active)return;
  if(!fishing){castLine();return}
@@ -1527,7 +1529,7 @@ function startBite(now){
 function answerStrike(i){
  const f=fishing;if(!f||f.state!=='bite')return;
  const L=f.lesson,right=L.opts[i]===L.ans;f.tries++;
- if(f.tries===1){lessonStats.all++;if(right)lessonStats.ok++;try{localStorage.setItem('gno-ordnance-lessons',JSON.stringify(lessonStats))}catch(e){}}
+ if(f.tries===1){lessonStats.all++;if(right)lessonStats.ok++;try{localStorage.setItem('realm-ordnance-lessons',JSON.stringify(lessonStats))}catch(e){}}
  if(!right){
   if(f.tries<2){$('#sk-opts').children[i].disabled=true;$('#sk-tip').textContent='Not quite, have another look. Tip: '+L.tip;fishMsg('Not quite. You get one more try.');return}
   fishMsg('The hook slips. The answer was '+L.ans+'. '+L.why);fishing=null;return}
@@ -1540,7 +1542,7 @@ function landFish(){
  const f=fishing,fi=f.fish;
  if(fi.junk)fishMsg('You hauled up '+fi.name+'. (junk)');
  else{
-  fishLog.push({name:fi.name,cm:fi.cm,island:fi.island});try{localStorage.setItem('gno-ordnance-fish',JSON.stringify(fishLog))}catch(e){}
+  fishLog.push({name:fi.name,cm:fi.cm,island:fi.island});try{localStorage.setItem('realm-ordnance-fish',JSON.stringify(fishLog))}catch(e){}
   fishMsg((fi.cm>=70?'A beauty! ':'Landed ')+fi.name+', '+fi.cm+' cm'+(fi.island?' from the '+fi.island+' waters':'')+'.');
   deck.fly={t0:performance.now(),x:f.x,z:f.z,big:fi.cm>=70};
  }
@@ -1606,7 +1608,7 @@ function fishFrame(dt,t){
   if(u>=1){spray(jp.x+jp.dx*4,-.6,jp.z+jp.dz*4,12,3,1.5);deck.jump=null}
   else if(!fl){deck.leap.visible=true;const x=jp.x+jp.dx*4*u,z=jp.z+jp.dz*4*u;deck.leap.position.set(x,seaY(x,z)+Math.sin(Math.PI*u)*1.7,z);deck.leap.rotation.set(0,-Math.atan2(jp.dz,jp.dx),Math.cos(u*Math.PI)*.8);deck.leap.scale.set(.5,.14,.16)}}
  // shoal shadows circling under the jetties
- if(deck.shoals)for(const s of deck.shoals){const a=s.ph+t/1000*s.sp;s.m.position.set(s.cx+Math.cos(a)*s.r,-1.6,s.cz+Math.sin(a)*s.r);s.m.rotation.y=-(a+(s.sp>0?1.57:-1.57))}
+ if(deck.shoals)for(const s of deck.shoals){s.m.visible=riseLevel(s.I,now)>=1;const a=s.ph+t/1000*s.sp;s.m.position.set(s.cx+Math.cos(a)*s.r,-1.6,s.cz+Math.sin(a)*s.r);s.m.rotation.y=-(a+(s.sp>0?1.57:-1.57))}
  // boat bow spray
  const lb=deck.lb2||{x:B.x,y:B.y},spd=Math.hypot(B.x-lb.x,B.y-lb.y)/Math.max(dt,.001);deck.lb2={x:B.x,y:B.y};
  if(P.boat&&spd>22){const n=spd>60?3:1;spray(B.x+Math.cos(B.hd)*5.8,-.55+swellAt(B.x,B.y,t/1000).h*.8,B.y+Math.sin(B.hd)*5.8,n,2.2,2.4)}
@@ -1672,6 +1674,8 @@ function drawDeck(dt,t){
  for(const mesh of deck.world.children){
   const coast=mesh.userData.grassCoast;
   if(coast)mesh.visible=Math.hypot(coast.lx-P.x,coast.ly-P.y)<coast.s*1.25+112;
+  const isle=mesh.userData.isle;
+  if(isle)mesh.position.y=mesh.userData.baseY-riseDepth*(1-riseLevel(isle,t));
  }
  if(ISL.length)for(const g of deck.gulls){g.c=ISL[g.i%ISL.length].ps[0];
   const a=g.a0+t/1000*g.sp,x=g.c.lx+Math.cos(a)*g.r,z=g.c.ly+Math.sin(a)*g.r;
@@ -1684,7 +1688,8 @@ function drawDeck(dt,t){
  const tag=$('#realm-tag');
  let best=null, distance=175, position;
  const requested=selectedPath;
- for(const {p} of PK){
+ for(const {p,I} of PK){
+  if(riseLevel(I,t)<1)continue;
   const d=gap(P,{x:p.lx,y:p.ly});
   if(d>distance&&p.path!==requested)continue;
   if((p.lx-P.x)*Math.cos(P.hd)+(p.ly-P.y)*Math.sin(P.hd)<.5)continue;
@@ -1697,7 +1702,7 @@ function drawDeck(dt,t){
  if(best){
   tag.style.left=(position.x+1)*cw/2+'px';tag.style.top=(1-position.y)*ch/2+'px';
   const reading=best.liveReading??best;
-  tag.textContent=best.name+(!reading.txs&&reading.olderBlock?' · older sighting':' · '+(reading.txs??0)+' calls');
+  tag.textContent=best.genesis?'Genesis · block 1':best.name+(!reading.txs&&reading.olderBlock?' · older sighting':' · '+(reading.txs??0)+' calls');
  }
 }
 
@@ -1737,16 +1742,22 @@ function pickChartRealm(clientX,clientY){
 /* ---------- drawing ---------- */
 function draw(t){ctx.setTransform(DPR,0,0,DPR,0,0);ctx.fillStyle=SEA;ctx.fillRect(0,0,cw,ch);
  const cx=chartOverview?WW/2:P.x,cy=chartOverview?WH/2:P.y;ctx.setTransform(DPR*k,0,0,DPR*k,DPR*(cw/2-cx*k),DPR*(ch/2-cy*k));ctx.drawImage(WC,0,0);
- const u=1/k;ctx.textAlign='center';ctx.lineJoin='round';
- ISL.forEach(I=>{const coast=I.ps[0],x=coast.lx,y=coast.ly-coast.s*1.31;
+  coverRising(ctx,t);
+  const u=1/k;ctx.textAlign='center';ctx.lineJoin='round';
+  ISL.forEach(I=>{if(riseLevel(I,t)<.5)return;const coast=I.ps[0],x=coast.lx,y=coast.ly-coast.s*1.31;
   ctx.font='italic '+20*u+'px Georgia';if('letterSpacing'in ctx)ctx.letterSpacing=3*u+'px';ctx.lineWidth=4*u;ctx.strokeStyle='rgba(207,227,234,.9)';ctx.fillStyle='#2d5a73';
   ctx.strokeText(I.n.toUpperCase(),x,y);ctx.fillText(I.n.toUpperCase(),x,y);
   if(I.open){ctx.font='bold '+11*u+'px monospace';ctx.fillStyle='#b5532a';ctx.strokeText('OPEN GROUND',x,y+14*u);ctx.fillText('OPEN GROUND',x,y+14*u)}
   if('letterSpacing'in ctx)ctx.letterSpacing='0px'});
  const nearbyLabels=[];
- PK.forEach(({p})=>{
-  const {size,offsets}=markerShape(p,k),picked=p.path===selectedPath;
-  if(p.offshore){
+  PK.forEach(({p,I})=>{
+   if(riseLevel(I,t)<.5)return;
+   const {size,offsets}=markerShape(p,k),picked=p.path===selectedPath;
+   if(p.genesis){
+    ctx.fillStyle=picked?'#a74026':'#b5532a';ctx.strokeStyle='#fff8e6';ctx.lineWidth=u;
+    ctx.beginPath();ctx.arc(p.lx,p.ly,size*.9,0,Math.PI*2);ctx.fill();ctx.stroke();
+    return;
+   }else if(p.offshore){
    ctx.fillStyle=picked?'#a74026':'#396777';ctx.strokeStyle='#fff8e6';ctx.lineWidth=u;
    ctx.beginPath();ctx.moveTo(p.lx,p.ly-size*1.4);ctx.lineTo(p.lx+size,p.ly);ctx.lineTo(p.lx,p.ly+size*1.4);ctx.lineTo(p.lx-size,p.ly);ctx.closePath();ctx.fill();ctx.stroke();
   }else if(p.txs==null||p.older){
@@ -1789,18 +1800,115 @@ function draw(t){ctx.setTransform(DPR,0,0,DPR,0,0);ctx.fillStyle=SEA;ctx.fillRec
  ctx.fillStyle='#7a4f2a';ctx.strokeStyle='#3b2f22';ctx.lineWidth=1.2;ctx.beginPath();ctx.ellipse(0,0,14,6,0,0,6.283);ctx.fill();ctx.stroke();
  ctx.fillStyle='#fff8e6';ctx.beginPath();ctx.moveTo(-2,-1);ctx.lineTo(-2,-12);ctx.lineTo(9,-1);ctx.fill();ctx.stroke();ctx.restore();
  ctx.fillStyle='#b5532a';ctx.strokeStyle='#fff8e6';ctx.lineWidth=2*bs;ctx.beginPath();ctx.arc(P.x,P.y,5*bs*.8,0,6.283);ctx.fill();ctx.stroke()}
-let lt=0;function frame(t){const dt=Math.min(.05,(t-lt)/1000||0);lt=t;if(WC){applyPendingChart();step(dt);ui();if(deck.active)drawDeck(dt,t);else draw(t)}requestAnimationFrame(frame)}
+let lt=0;function frame(t){const dt=Math.min(.05,(t-lt)/1000||0);lt=t;if(WC){applyPendingChart();step(dt);ui();if(deck.active)drawDeck(dt,t);else draw(t);drawMinimap(t)}requestAnimationFrame(frame)}
 function resize(){cw=wrap.clientWidth;ch=wrap.clientHeight;cv.width=cw*DPR;cv.height=ch*DPR;if(chartOverview&&WW&&WH)k=Math.min(cw/WW,ch/WH)*.94;sizeDeck()}
 addEventListener('resize',resize);
 $('#zi').onclick=()=>{chartOverview=false;k=Math.min(2.5,k*1.3);};
 $('#zo').onclick=()=>{chartOverview=false;k=Math.max(.16,k/1.3);};
 $('#zl').onclick=()=>{chartOverview=!chartOverview;k=chartOverview?Math.min(cw/WW,ch/WH)*.94:1;};
 /* ---------- data ---------- */
-function go(rows,ds,source,real,keepPosition=false,all=rows){
+function go(rows,ds,source,real,keepPosition=false,all=rows,layout={}){
  if(!keepPosition){cancelTour();pendingMap=null;}
- pausedStops=null;setup(rows,ds,keepPosition);if(chartOverview)k=Math.min(cw/WW,ch/WH)*.94;catalogueRows=all;
- $('#src').textContent=source;$('#badge').style.display=real?'none':'';
+ const shown=new Set(ISL.map(I=>I.n+(I.genesis?'#genesis':'')));
+ const g=withGenesis(rows,ds,layout);
+ pausedStops=null;setup(g.rows,g.ds,keepPosition);if(chartOverview)k=Math.min(cw/WW,ch/WH)*.94;catalogueRows=all;
+ // Islands that were not on the chart before rise out of the sea as their data arrives.
+ let order=0;const now=performance.now();
+ for(const I of ISL)if(!shown.has(I.n+(I.genesis?'#genesis':'')))I.riseStart=now+(I.genesis?0:order++*350);
+ $('#src').textContent=source;
  lastHtml='';renderSearch();
+}
+/* ---------- genesis island and the rise from the sea ---------- */
+const riseDepth=32,riseTime=3200;
+function riseLevel(I,now){
+ if(!I?.riseStart)return 1;
+ const u=(now-I.riseStart)/riseTime;
+ return u>=1?1:u<=0?0:1-(1-u)**3;
+}
+function coverRising(c,now){
+ for(const I of ISL){
+  const e=riseLevel(I,now);if(e>=1)continue;
+  c.globalAlpha=1-e;c.fillStyle=SEA;c.fillRect(I.bx0,I.by0,I.bx1-I.bx0,I.by1-I.by0);c.globalAlpha=1;
+ }
+}
+const genesisInfo={};
+function genesisNetName(p){return Object.values(networks).find(n=>n.id===p?.genesisNet)?.name??p?.genesisNet??''}
+function withGenesis(rows,ds,layout){
+ let centre=layout.centre;
+ if(!centre){
+  const n=Math.max(1,ds.length);
+  centre={x:ds.reduce((s,d)=>s+d.x,0)/n,y:ds.reduce((s,d)=>s+d.y,0)/n};
+  const clear=q=>ds.every(d=>Math.hypot(q.x-d.x,q.y-d.y)>(d.radius??150)*2.2+60);
+  for(let r=0,a=0;!clear(centre)&&r<3000;a+=.7,r+=12)centre={x:centre.x+Math.cos(a)*r*.1,y:centre.y+Math.sin(a)*r*.1};
+ }
+ const row={path:'genesis:'+(layout.net??''),cat:'genesis',name:'Genesis block',genesis:true,genesisNet:layout.net,txs:null,x:centre.x,y:centre.y};
+ return {rows:[...rows,row],ds:[...ds,{n:'genesis',x:centre.x,y:centre.y,radius:22,genesis:true}]};
+}
+function genesisHtml(p){
+ const net=Object.values(networks).find(n=>n.id===p.genesisNet),g=genesisInfo[p.genesisNet];
+ const name=esc(net?.name??p.genesisNet??'');
+ if(!g||g.state==='loading')return '<b>Genesis block</b> · '+name+'<br>Reading block 1 from the '+name+' RPC…';
+ if(g.state!=='ok')return '<b>Genesis block</b> · '+name+'<br>Genesis block details unavailable from the '+name+' RPC'+(g.error?' ('+esc(g.error)+')':'')+'.';
+ const source=net?'<br><a target="_blank" rel="noopener" href="'+esc(net.rpc)+'/block?height=1">Block 1 on the '+name+' RPC ↗</a>':'';
+ return '<b>Genesis block</b> · '+name+'<br>Height '+g.height+' · '+esc(g.time)+'<br>Chain ID '+esc(g.chainId)+'<br>Hash '+(g.hash?esc(g.hash):'unavailable')+source;
+}
+function base64Hex(value){
+ try{return Array.from(atob(value),c=>c.charCodeAt(0).toString(16).padStart(2,'0')).join('').toUpperCase()}catch{return ''}
+}
+async function loadGenesis(target){
+ const known=genesisInfo[target.id];
+ if(known?.state==='ok'||known?.state==='loading')return known;
+ genesisInfo[target.id]={state:'loading'};
+ try{
+  const signal=AbortSignal.timeout?AbortSignal.timeout(20000):undefined;
+  const result=await rpcResult('block',{height:1},signal,target);
+  const header=result.block_meta?.header??result.block?.header;
+  if(!header||Number(header.height)!==1)throw new Error('block 1 was not returned');
+  if(header.chain_id!==target.id)throw new Error('the RPC reported chain '+header.chain_id);
+  const hash=result.block_meta?.block_id?.hash;
+  genesisInfo[target.id]={state:'ok',height:1,time:header.time,chainId:header.chain_id,hash:hash?base64Hex(hash):''};
+ }catch(error){
+  genesisInfo[target.id]={state:'unavailable',error:error.name==='TimeoutError'||error.name==='AbortError'?'request timed out':error.message};
+ }
+ return genesisInfo[target.id];
+}
+async function genesisFor(token){
+ const target=network,g=await loadGenesis(target);
+ if(token!==generation||g.state!=='ok'||activeMode!=='loading')return;
+ // Before the activity scan returns, only the genesis island stands in the sea.
+ go([],[],target.name+' · genesis block · reading live activity…',true,true,[],{centre:{x:0,y:0},net:target.id});
+}
+function emptySea(){
+ const size=1400;
+ ISL=[];PK=[];JT=[];WW=WH=size;originX=originY=-size/2;
+ P.boat=true;P.swim=false;P.x=-originX;P.y=150-originY;P.hd=-Math.PI/2;
+ B.x=P.x;B.y=P.y;B.hd=P.hd;deck.eye=null;
+ bake();deck.dirty=true;catalogueRows=[];
+ if(chartOverview)k=Math.min(cw/WW,ch/WH)*.94;
+}
+/* ---------- sailing minimap ---------- */
+const mini=$('#minimap'),miniCtx=mini.getContext('2d');let miniAt=0;
+function drawMinimap(t){
+ const show=deck.active&&P.boat&&!P.swim&&!!WC;
+ mini.hidden=!show;
+ if(!show||t-miniAt<90)return;
+ miniAt=t;
+ const w=mini.clientWidth,h=mini.clientHeight;
+ if(mini.width!==Math.round(w*DPR)||mini.height!==Math.round(h*DPR)){mini.width=Math.round(w*DPR);mini.height=Math.round(h*DPR);}
+ const c=miniCtx;c.setTransform(DPR,0,0,DPR,0,0);c.fillStyle=SEA;c.fillRect(0,0,w,h);
+ const s=Math.min((w-8)/WW,(h-8)/WH),ox=(w-WW*s)/2,oy=(h-WH*s)/2;
+ c.save();c.translate(ox,oy);c.scale(s,s);c.drawImage(WC,0,0);coverRising(c,t);c.restore();
+ c.textAlign='center';c.lineJoin='round';
+ for(const I of ISL){
+  if(riseLevel(I,t)<.5)continue;
+  const coast=I.ps[0],x=ox+coast.lx*s,y=oy+coast.ly*s;
+  if(I.genesis){c.strokeStyle='#b5532a';c.lineWidth=1.5;c.beginPath();c.arc(x,y,3.2,0,Math.PI*2);c.stroke();continue;}
+  c.font='italic 8px Georgia';c.lineWidth=2.5;c.strokeStyle='rgba(207,227,234,.9)';c.fillStyle='#2d5a73';
+  const ly=y-coast.s*1.3*s-2;c.strokeText(I.n,x,ly);c.fillText(I.n,x,ly);
+ }
+ c.save();c.translate(ox+P.x*s,oy+P.y*s);c.rotate(P.hd);
+ c.fillStyle='#b5532a';c.strokeStyle='#fff8e6';c.lineWidth=1.2;
+ c.beginPath();c.moveTo(6.5,0);c.lineTo(-4,-3.8);c.lineTo(-2,0);c.lineTo(-4,3.8);c.closePath();c.fill();c.stroke();c.restore();
 }
 function snapshotCSV(csv){
  const L=csv.trim().split(/\r?\n/),h=L[0].split(',').map(s=>s.trim());
@@ -1813,7 +1921,7 @@ function showSnapshot(rows,ds,note){
  if(!rows.length&&!ds?.length)throw new Error('The Onyx snapshot contains no districts or realms.');
  stopLive();activeMode='csv';liveWeb='https://onyx.testnets.gno.land';$('#live-state').textContent='Imported snapshot';
  if(!ds){const m={};rows.forEach(r=>(m[r.cat]=m[r.cat]||[]).push(r));ds=Object.entries(m).map(([n,a])=>({n,x:a.reduce((s,r)=>s+r.x,0)/a.length,y:a.reduce((s,r)=>s+r.y,0)/a.length}))}
- go(rows,ds,'Onyx snapshot · '+rows.length+' realms · '+ds.length+' districts'+note,1);
+  go(rows,ds,'Onyx snapshot · '+rows.length+' realms · '+ds.length+' districts'+note,1,false,rows,{net:networks.onyx.id});loadGenesis(networks.onyx);
 }
 $('#bF').onclick=()=>$('#cf').click();
 $('#cf').onchange=async e=>{
@@ -2084,6 +2192,7 @@ function mapRecords(paths,window){
 let pendingMap=null;
 const pendingChartNote=' · terrain update at a jetty';
 function readyForChart(districts){
+ if(activeMode==='loading')return true;
  if(P.boat||P.swim||drag||ptr||walkKeys.some(key=>keys[key]))return false;
  const dock=jettyAt(P.x,P.y);
  if(!dock)return false;
@@ -2106,8 +2215,8 @@ function paintLive(paths,activity){
  const districts=data.districts.length?data.districts:[{n:'Harbour',x:0,y:0,radius:75}];
  const signature=JSON.stringify([network.id,data.charted.map(p=>[p.path,p.txs,p.callers,p.activeBlocks,p.olderBlock])]);
  if(signature!==lastMapSignature){
-  const keep=activeMode===network.id;
-  if(!readyForChart(districts)){
+   const keep=activeMode===network.id||activeMode==='loading';
+if(!readyForChart(districts)){
    pendingMap={paths,activity,districts};
    catalogueRows=data.all;
    $('#src').textContent=title+pendingChartNote;
@@ -2116,7 +2225,7 @@ function paintLive(paths,activity){
   }
   pendingMap=null;
   liveWeb=network.web;
-  go(data.charted,districts,title,true,keep,data.all);
+   go(data.charted,districts,title,true,keep,data.all,{centre:{x:0,y:0},net:network.id});
   activeMode=network.id;lastMapSignature=signature;
  }else{
   pendingMap=null;
@@ -2139,7 +2248,8 @@ function startLive(){
  network=networks[$('#network').value]??networks.mainnet;
  windowSize=Number($('#blocks').value)||5000;
  $('#live').textContent='Pause live';
- poll(generation);
+ if(activeMode==='loading')$('#live-state').textContent='Loading live chain data…';
+ poll(generation);genesisFor(generation);
 }
 async function poll(token){
  if(!following||token!==generation)return;
@@ -2158,6 +2268,7 @@ async function poll(token){
   };
   const activity=await recentBlocks(history,controller.signal,statusLabel,scanCache);
   if(!alive())return;
+  if(genesisInfo[network.id]?.state==='unavailable'){delete genesisInfo[network.id];loadGenesis(network);}
   history=activity;
   const useActivity=()=>paintLive(directory?.paths??[],activity);
   const checked=()=>{if(alive())$('#live-state').textContent='Live · checked '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});};
@@ -2174,7 +2285,9 @@ async function poll(token){
   await refreshDirectory;
  }catch(error){
   if(alive()){
-   $('#live-state').textContent=(history?'Last verified map · ':'')+(error.name==='AbortError'?'Scan timed out':error.message)+' · retrying';
+    const reason=error.name==='AbortError'?'Scan timed out':error.message;
+    $('#live-state').textContent=activeMode==='loading'?'Could not load live chain data · '+reason+' · retrying':(history?'Last verified map · ':'')+reason+' · retrying';
+    if(activeMode==='loading'&&genesisInfo[network.id]?.state==='unavailable'){delete genesisInfo[network.id];genesisFor(generation);}
   }
  }finally{
   clearTimeout(deadline);controller.abort();
@@ -2211,12 +2324,7 @@ if(typeof location!=='undefined'){
  if(new URLSearchParams(location.search).get('network')==='onyx')$('#network').value='onyx';
  refreshApproval();
 }
-resize();{const d=demo();
- for(const category of ['defi','social','tools','infra']){
-  const candidates=d.rows.filter(p=>p.cat===category).sort((a,b)=>a.txs-b.txs);
-  if(candidates[0])candidates[0].offshore=true;
- }
- go(d.rows,d.ds,'Synthetic demo · sample terrain while the live scan runs',0)}
+resize();emptySea();
 requestAnimationFrame(frame);
 setDeck(true);
 startLive();
