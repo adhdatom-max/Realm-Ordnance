@@ -1,0 +1,34 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  javascript:
+    name: JS tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Run catalogue, categoriser and RPC tests
+        run: node --test test/js/*.test.mjs
+
+  gno:
+    name: Gno tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.x"
+      - name: Install gno
+        run: go install github.com/gnolang/gno/gnovm/cmd/gno@v1.8.0
+      - name: Run realm tests
+        working-directory: realm
+        run: gno test .
